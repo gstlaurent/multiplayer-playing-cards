@@ -8,6 +8,8 @@ const DECK_STYLE = 'blue2';
 const PLAYING_CARDS_TEXTURE = 'playingCards';
 const CARD_BACK_TEXTURE = 'playingCardBacks';
 
+const CIRCLE_SIZE = 30;
+
 // *****************************************************************************
 // ************** CONFIG *******************************************************
 // *****************************************************************************
@@ -51,10 +53,25 @@ function preload() {
 function create() {
   var self = this;  
   this.socket = io();
-  this.myId = this.socket.id;
+  this.id = null;
   this.cards = {};
+  this.players = {};
+  this.circle = self.add.graphics();
   
-  this.socket.on('connect', () => console.log('connected'));
+  this.socket.on('connect', function () {
+    console.log(`Connected with id ${self.socket.id}`);
+    self.id = self.socket.id;
+  }); 
+  this.socket.on('currentPlayers', function (players) {
+    console.log(players);
+    self.players = players;
+    self.circle.clear();
+    self.circle.fillStyle(players[self.id].colour);
+    self.circle.fillCircle(CIRCLE_SIZE, CIRCLE_SIZE, CIRCLE_SIZE - 4);
+  });
+  this.socket.on('newPlayer', (player) => this.players[player.id] = player);
+  this.socket.on('playerExit', (player) => delete this.players[player.id]);
+
 
   this.socket.on('initializeCards', function (cards) {
     cards.forEach( card => {

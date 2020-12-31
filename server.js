@@ -67,6 +67,9 @@ const CARD_NAMES = [
   //"Joker",
 ];
 
+// *************************************************************************************************
+// ************** Card *****************************************************************************
+// *************************************************************************************************
 
 class Card {
   constructor(cardName) {
@@ -87,18 +90,71 @@ class Card {
   }
 }
 
-let cards = createDeck();
-
 function createDeck() {
   let cards = CARD_NAMES.map(cardName => new Card(cardName));
   return cards;
 }
 
 
+// *************************************************************************************************
+// ************** Player *****************************************************************************
+// *************************************************************************************************
+class Player {
+  constructor (id, colour) {
+    this.id = id;
+    this.colour = colour;
+  }
+}
+
+const COLOURS = [
+  0x0062ff, // blue
+  0xeb7434, // orange
+  0xbf1d00, // red
+  0x000000, // black
+  0xffffff, // white
+  0x00b5d1, // turqoise
+];
+
+function createPlayer(id, unavailableColours) {
+  var colour = null;
+  for (var i = 0; i < 100; i++) {
+    let prelimColour = COLOURS[Math.floor(Math.random() * COLOURS.length)];
+    if (!unavailableColours.includes(prelimColour)) {
+      colour = prelimColour;
+      break;
+    }
+  }
+  if (colour === null) {
+    colour = COLOURS[0];
+  }
+
+  return new Player(id, colour);
+}
+
+
+
+// *************************************************************************************************
+// *************************************************************************************************
+// *************************************************************************************************
+// *************************************************************************************************
+// *************************************************************************************************
+// *************************************************************************************************
+
+
+let cards = createDeck();
+let players = {};
+
 
 
 io.on('connection', function (socket) {
   console.log('a user connected: ' + socket.id);
+  players[socket.id] = createPlayer(socket.id, Object.values(players).map(p => p.colour));
+
+  // send the players object to the new player
+  socket.emit('currentPlayers', players);
+
+  // update all other players of the new player
+  socket.broadcast.emit('newPlayer', players[socket.id]);
 
   socket.emit('initializeCards', cards.map(
     (card, i) => card.toClient(i, socket.id)
@@ -110,7 +166,17 @@ io.on('connection', function (socket) {
     card.y = cardUpdate.y;
     socket.broadcast.emit('moveCard', cardUpdate);
   });
-     
+
+  // when a player disconnects, remove them from our players object
+  socket.on('disconnect', function () {
+    console.log(`user disconnected: ${socket.id}`);
+
+    // remove this player from our players object
+    delete players[socket.id];
+
+    // emit a message to all players to remove this player
+    io.emit('playerExit', socket.id);
+  });
 
   
   // // create a new player and add it to our players object
@@ -134,15 +200,6 @@ io.on('connection', function (socket) {
   // // update all other players of the new player
   // socket.broadcast.emit('newPlayer', players[socket.id]);
 
-  // // when a player disconnects, remove them from our players object
-  // socket.on('disconnect', function () {
-  //   console.log('user disconnected');
-
-  //   // remove this player from our players object
-  //   delete players[socket.id];
-  //   // emit a message to all players to remove this player
-  //   io.emit('disconnected', socket.id);
-  // });
 
   // // when a player moves, update the player data
   // socket.on('playerMovement', function (movementData) {
