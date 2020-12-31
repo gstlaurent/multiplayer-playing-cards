@@ -144,8 +144,6 @@ function createPlayer(id, unavailableColours) {
 let cards = createDeck();
 let players = {};
 
-
-
 io.on('connection', function (socket) {
   console.log('a user connected: ' + socket.id);
   players[socket.id] = createPlayer(socket.id, Object.values(players).map(p => p.colour));
@@ -156,9 +154,12 @@ io.on('connection', function (socket) {
   // update all other players of the new player
   socket.broadcast.emit('newPlayer', players[socket.id]);
 
-  socket.emit('initializeCards', cards.map(
-    (card, i) => card.toClient(i, socket.id)
-  ));
+  socket.on('playersInitialized', function () {
+    // Cards rely on players, so players must be initialized prior to sending cards.
+    socket.emit('initializeCards', cards.map(
+      (card, i) => card.toClient(i, socket.id)
+    ));
+  });
 
   socket.on('cardDragged', function (cardUpdate) {
     let card = cards[cardUpdate.cardId];   
@@ -178,6 +179,24 @@ io.on('connection', function (socket) {
     io.emit('playerExit', socket.id);
   });
 
+  socket.on('cardClicked', function (cardId) {
+    let card = cards[cardId];
+    card.ownerId = socket.id;
+
+    // The player now owns this card. Send its face value to the player
+    socket.emit('cardOwnerUpdate', {
+      cardId: cardId,
+      ownerId: card.ownerId,
+      cardName: card.cardName
+    });
+
+    // update all other players of the new owner
+    socket.broadcast.emit('cardOwnerUpdate', {
+      cardId: cardId,
+      ownerId: card.ownerId,
+      cardName: null,
+    });
+  });
   
   // // create a new player and add it to our players object
   // players[socket.id] = {
@@ -224,5 +243,5 @@ io.on('connection', function (socket) {
 });
 
 server.listen(8081, function () {
-console.log(`Listening on ${server.address().port}`);
+  console.log(`Listening on ${server.address().port}`);
 });

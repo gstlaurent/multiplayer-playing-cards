@@ -10,6 +10,8 @@ const CARD_BACK_TEXTURE = 'playingCardBacks';
 
 const CIRCLE_SIZE = 30;
 
+const CLICK_SPEED = 200;
+const CLICK_DISTANCE = 10;
 // *****************************************************************************
 // ************** CONFIG *******************************************************
 // *****************************************************************************
@@ -68,6 +70,7 @@ function create() {
     self.circle.clear();
     self.circle.fillStyle(players[self.id].colour);
     self.circle.fillCircle(CIRCLE_SIZE, CIRCLE_SIZE, CIRCLE_SIZE - 4);
+    self.socket.emit('playersInitialized');
   });
   this.socket.on('newPlayer', (player) => this.players[player.id] = player);
   this.socket.on('playerExit', (player) => delete this.players[player.id]);
@@ -94,7 +97,10 @@ function create() {
     card.setNormalizedLocation(self, cardUpdate.x, cardUpdate.y);
   });
 
-
+  this.socket.on('cardOwnerUpdate', function (cardUpdate) {
+    let card = self.cards[cardUpdate.cardId]
+    card.setOwner(cardUpdate.ownerId, cardUpdate.cardName);
+  });
 
   // Brings a card to the top when it is selected
   this.input.on('dragstart', function (pointer, gameObject) {
@@ -102,6 +108,21 @@ function create() {
     self.children.bringToTop(card.image);
     self.children.bringToTop(card.eyes);
   });
+
+  // Brings a card to the top when it is selected
+  this.input.on('dragend', function (pointer, gameObject) {
+    // console.log(`${pointer.getDuration()}, ${pointer.distance}`);
+    const isQuick = pointer.getDuration() < CLICK_SPEED;
+    const isClose = pointer.distance < CLICK_SPEED;
+    const isClick = isQuick && isClose;
+
+    if (isClick) {
+      let card = findCard(self, gameObject);
+      self.socket.emit('cardClicked', card.id)
+    }
+  });
+
+
 
 }
 
@@ -148,8 +169,10 @@ function findCard(scene, gameObject) {
 // *************************************************************************************************
 
 class Card {
-  constructor(cardId, scene, normalizedX, normalizedY, faceName, visibleTo) {
+  constructor(cardId, scene, normalizedX, normalizedY, faceName, ownerId) {
+    this.scene = scene;
     this.id = cardId;
+    this.ownerId = ownerId;
     let x = denormalizeX(scene, normalizedX);
     let y = denormalizeY(scene, normalizedY);    
     this.image = faceName === null
@@ -163,17 +186,13 @@ class Card {
     this.eyes = scene.add.image(x, y, 'eyes')
     let eyesScale = (this.image.displayWidth / 2) / this.eyes.width;
     this.eyes.setScale(eyesScale);
-
-    if (visibleTo === null) {
-      // this will be null if everyone can see it, or no one can see it
-      this.eyes.visible = false;
-    } else {
-      // get tint for visibleTo id.
-      this.eyes.setTintFill(0xeb7434);
-    }
+    this.eyes.visible = false;
 
     // To ensure eyes are in the correct place
     this.setLocation(x, y);
+
+    this.setOwner(ownerId, faceName);
+
   }
 
   showFace(faceName) {
@@ -207,6 +226,27 @@ class Card {
 
   getNormalizedY(scene) {
     return normalize(scene, this.image.y)
+  }
+
+  setOwner(ownerId, cardName) {
+    this.ownerId = ownerId;
+    this.faceName = cardName;
+
+    if (ownerId === null) {
+      // this will be null if everyone can see it, or no one can see it
+      this.eyes.visible = false;
+    } else {
+      this.eyes.setTintFill(this.scene.players[ownerId].colour);
+      this.eyes.visible = true;
+    }
+
+    if (ownerId == this.scene.id) {
+      this.showFace(this.faceName);
+    } else {
+      this.showBack();
+    }
+
+
   }
 }
 
