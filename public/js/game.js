@@ -142,9 +142,17 @@ class Card {
     this.image.setData('cardId', cardId);
     scene.input.setDraggable(this.image);
 
-    this.eyes = scene.add.image(x, y, 'eyes').setScale(0.05); //.setTintFill(0xfcba03);
+    // Create eyes that are half the width of the card and along its top
+    this.eyes = scene.add.image(x, y, 'eyes')
+    let eyesScale = (this.image.displayWidth / 2) / this.eyes.width;
+    this.eyes.setScale(eyesScale);
+
     if (visibleTo === null) {
-      //this.eyes.visible = false;
+      // this will be null if everyone can see it, or no one can see it
+      this.eyes.visible = false;
+    } else {
+      // get tint for visibleTo id.
+      this.eyes.setTintFill(0xeb7434);
     }
 
     // To ensure eyes are in the correct place
