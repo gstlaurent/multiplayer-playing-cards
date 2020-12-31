@@ -1,0 +1,16 @@
+{
+  "name": "multiplayer-rummy",
+  "version": "1.0.0",
+  "description": "Multiplayer Virtual Card Game",
+  "main": "server.js",
+  "scripts": {
+    "start": "nodemon server.js"
+  },
+  "author": "Graham St-Laurent",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.17.1",
+    "nodemon": "^2.0.6",
+    "socket.io": "^3.0.4"
+  }
+}
