@@ -72,26 +72,28 @@ const CARD_NAMES = [
 // *************************************************************************************************
 
 class Card {
-  constructor(cardName) {
+  constructor(cardName, cardId) {
+    this.id = cardId;
     this.cardName = cardName;
     this.ownerId = null;
     this.x = 0.5;
     this.y = 0.5;
+    this.isFaceUp = false;
   }
 
-  toClient(cardId, clientId) {
+  toClient(clientId) {
     return {
-      id: cardId,
+      id: this.id,
       x: this.x,
       y: this.y,
-      cardName: this.ownerId === clientId ? this.cardName : null,
+      cardName: (this.ownerId === clientId || this.isFaceUp) ? this.cardName : null,
       ownerId: this.ownerId
     };
   }
 }
 
 function createDeck() {
-  let cards = CARD_NAMES.map(cardName => new Card(cardName));
+  let cards = CARD_NAMES.map((cardName, i) => new Card(cardName, i));
   return cards;
 }
 
@@ -155,10 +157,9 @@ io.on('connection', function (socket) {
   socket.broadcast.emit('newPlayer', players[socket.id]);
 
   socket.on('playersInitialized', function () {
-    // Cards rely on players, so players must be initialized prior to sending cards.
-    socket.emit('initializeCards', cards.map(
-      (card, i) => card.toClient(i, socket.id)
-    ));
+    // Card rendering depends on player colour, so players must be initialized
+    // prior to sending cards.
+    socket.emit('initializeCards', cards.map(card => card.toClient(socket.id)));
   });
 
   socket.on('cardDragged', function (cardUpdate) {
@@ -183,19 +184,11 @@ io.on('connection', function (socket) {
     let card = cards[cardId];
     card.ownerId = socket.id;
 
-    // The player now owns this card. Send its face value to the player
-    socket.emit('cardOwnerUpdate', {
-      cardId: cardId,
-      ownerId: card.ownerId,
-      cardName: card.cardName
-    });
+    // The player now owns this card. Send its face value to the player;
+    socket.emit('cardUpdate', card.toClient(socket.id));
 
     // update all other players of the new owner
-    socket.broadcast.emit('cardOwnerUpdate', {
-      cardId: cardId,
-      ownerId: card.ownerId,
-      cardName: null,
-    });
+    socket.broadcast.emit('cardUpdate', card.toClient(undefined));
   });
   
   // // create a new player and add it to our players object

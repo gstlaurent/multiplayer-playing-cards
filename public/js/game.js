@@ -94,12 +94,13 @@ function create() {
   });
   this.socket.on('moveCard', function (cardUpdate) {
     let card = self.cards[cardUpdate.cardId];
-    card.setNormalizedLocation(self, cardUpdate.x, cardUpdate.y);
+    card.setNormalizedLocation(cardUpdate.x, cardUpdate.y);
   });
 
-  this.socket.on('cardOwnerUpdate', function (cardUpdate) {
-    let card = self.cards[cardUpdate.cardId]
-    card.setOwner(cardUpdate.ownerId, cardUpdate.cardName);
+  this.socket.on('cardUpdate', function (newCard) {
+    let card = self.cards[newCard.id]
+    card.update(newCard);
+    card.setOwner(newCard.ownerId, newCard.cardName);
   });
 
   // Brings a card to the top when it is selected
@@ -203,9 +204,9 @@ class Card {
     this.image.setTexture(CARD_BACK_TEXTURE, DECK_STYLE);
   }
 
-  setNormalizedLocation(scene, normalizedX, normalizedY) {
-    let x = denormalizeX(scene, normalizedX);
-    let y = denormalizeY(scene, normalizedY);  
+  setNormalizedLocation(normalizedX, normalizedY) {
+    let x = denormalizeX(this.scene, normalizedX);
+    let y = denormalizeY(this.scene, normalizedY);  
     this.setLocation(x, y);
   }
 
@@ -228,10 +229,7 @@ class Card {
     return normalize(scene, this.image.y)
   }
 
-  setOwner(ownerId, cardName) {
-    this.ownerId = ownerId;
-    this.faceName = cardName;
-
+  setOwner(ownerId) {
     if (ownerId === null) {
       // this will be null if everyone can see it, or no one can see it
       this.eyes.visible = false;
@@ -239,14 +237,17 @@ class Card {
       this.eyes.setTintFill(this.scene.players[ownerId].colour);
       this.eyes.visible = true;
     }
+  }
 
-    if (ownerId == this.scene.id) {
-      this.showFace(this.faceName);
+  update(newCard) {
+    this.setOwner(newCard.ownerId);
+    this.setNormalizedLocation(newCard.x, newCard.y);
+    
+    if (newCard.cardName != null) {
+      this.showFace(newCard.cardName);
     } else {
       this.showBack();
     }
-
-
   }
 }
 
