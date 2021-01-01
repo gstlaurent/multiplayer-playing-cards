@@ -76,9 +76,13 @@ class Card {
   constructor(cardName, cardId) {
     this.id = cardId;
     this.cardName = cardName;
-    this.ownerId = null;
+    this.reset();
+  }
+
+  reset() {
     this.x = 0.5;
     this.y = 0.5;
+    this.ownerId = null;
     this.isFaceUp = false;
   }
 
@@ -218,6 +222,13 @@ io.on('connection', function (socket) {
 
     // update all other players of the new state
     socket.broadcast.emit('cardUpdate', card.toClient(undefined));
+  });
+
+  socket.on('collectCardsClicked', function () {
+    for (const card of Object.values(cards)) {
+      card.reset();
+    }
+    io.emit('collectCards', cards[0].x, cards[0].y);
   });
   
   // // create a new player and add it to our players object

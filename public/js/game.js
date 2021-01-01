@@ -9,6 +9,8 @@ const PLAYING_CARDS_TEXTURE = 'playingCards';
 const CARD_BACK_TEXTURE = 'playingCardBacks';
 
 const CIRCLE_SIZE = 30;
+const BUFFER =  5;
+const TEXT_SIZE = 18;
 
 const CLICK_SPEED = 200;
 const CLICK_DISTANCE = 10;
@@ -69,7 +71,7 @@ function create() {
     self.players = players;
     self.circle.clear();
     self.circle.fillStyle(players[self.id].colour);
-    self.circle.fillCircle(CIRCLE_SIZE, CIRCLE_SIZE, CIRCLE_SIZE - 4);
+    self.circle.fillCircle(CIRCLE_SIZE, CIRCLE_SIZE, CIRCLE_SIZE - BUFFER);
     self.socket.emit('playersInitialized');
   });
   this.socket.on('newPlayer', (player) => this.players[player.id] = player);
@@ -123,7 +125,48 @@ function create() {
     }
   });
 
+// *************************************************************************************************
+// ************** Collect *****************************************************************************
+// *************************************************************************************************
 
+  this.collectText =
+    this.add.text((CIRCLE_SIZE + BUFFER) * 2, CIRCLE_SIZE - (TEXT_SIZE / 2), ['COLLECT'])
+      .setFontSize(TEXT_SIZE)
+      .setFontFamily('Trebuchet MS')
+      .setColor('#00ffff')
+      .setInteractive();
+
+  this.collectText.on('pointerup', function () {
+    self.socket.emit("collectCardsClicked");
+  });
+
+  this.collectText.on('pointerover', function () {
+      self.collectText.setColor('#ff69b4');
+  });
+
+  this.collectText.on('pointerout', function () {
+      self.collectText.setColor('#00ffff');
+  });
+
+  this.socket.on('collectCards', function (normalizedX, normalizedY) {
+    const x = denormalizeX(self, normalizedX);
+    const y = denormalizeY(self, normalizedY);
+
+    const cards = Object.values(self.cards)
+    cards.forEach( card => {
+      card.showBack();
+      card.setOwner(null);
+    });
+
+    self.tweens.add({
+      targets: cards.map(c => c.image),
+      duration: 200,
+      x: x,
+      y: y,
+      onComplete: () => cards.forEach(c => c.setLocation(x, y))
+    });
+  });
+ 
 
 }
 
@@ -234,8 +277,10 @@ class Card {
       // this will be null if everyone can see it, or no one can see it
       this.eyes.visible = false;
     } else {
-      this.eyes.setTintFill(this.scene.players[ownerId].colour);
-      this.eyes.visible = true;
+      if (ownerId in this.scene.players) {
+        this.eyes.setTintFill(this.scene.players[ownerId].colour);
+        this.eyes.visible = true;
+      }
     }
   }
 
