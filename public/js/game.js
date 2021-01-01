@@ -22,10 +22,10 @@ var config = {
   parent: 'phaser-example',
   width: 1400,
   height: 800,
-  // scale : {
-  //   mode: Phaser.Scale.RESISZE,
-  //   autoCenter: Phaser.Scale.CENTER_BOTH
-  // },
+  scale : {
+//    mode: Phaser.Scale.RESIZE,
+    autoCenter: Phaser.Scale.CENTER_BOTH
+  },
   backgroundColor: 'rgba(0, 190, 0, 0)',
   scene: {
     preload: preload,
