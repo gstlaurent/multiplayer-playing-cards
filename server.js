@@ -1,3 +1,4 @@
+const assert = require('assert').strict;
 var express = require('express');
 var app = express();
 var server = require('http').Server(app);
@@ -115,6 +116,7 @@ const COLOURS = [
   0x000000, // black
   0xffffff, // white
   0x00b5d1, // turqoise
+  0x006600, // dark green
 ];
 
 function createPlayer(id, unavailableColours) {
@@ -182,12 +184,39 @@ io.on('connection', function (socket) {
 
   socket.on('cardClicked', function (cardId) {
     let card = cards[cardId];
-    card.ownerId = socket.id;
+    // There are 3 states, that cycle through one another:
+    //  1 - no owner and face down
+    //      --click--> state 2
+    //  2 - owner and face down
+    //      --owner click--> state 3
+    //      --non-owner click--> state 2 (with new owner)
+    //  3 - no owner and face up
+    //      --click--> state 1
 
-    // The player now owns this card. Send its face value to the player;
+    if (card.ownerId === null && !card.isFaceUp) {
+      // State 1; Go to State 2
+      card.ownerId = socket.id;
+    } else if (card.ownerId !== null) {
+      // State 2
+      if (card.ownerId == socket.id) {
+        // Go to State 3
+        card.ownerId = null;
+        card.isFaceUp = true;
+      } else {
+        // Back to State 2, with new owner
+        card.ownerId = socket.id;
+      }
+    } else if (card.ownerId === null && card.isFaceUp) {
+      // State 3; Go to State 1
+      card.isFaceUp = false;
+    } else {
+      assert.fail(`Card not in valid state when clicked: Card has an Owner but is Face Up: ${card}`);
+    }
+
+    // Send the player a specific update incase they are now the owner
     socket.emit('cardUpdate', card.toClient(socket.id));
 
-    // update all other players of the new owner
+    // update all other players of the new state
     socket.broadcast.emit('cardUpdate', card.toClient(undefined));
   });
   
