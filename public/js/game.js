@@ -2,7 +2,7 @@
 // ************** CONSTANTS ****************************************************
 // *****************************************************************************
 
-let CARD_SCALE = 0.5;
+let CARD_SCALE = 0.75;
 const DYNAMIC_SCALING = true; // when true, CARD_SCALE is set based
                               // on the screen dimensions
 const DECK_STYLE = 'blue2';
@@ -66,7 +66,7 @@ function setCardScale(screenWidth, screenHeight) {
     let minHigh = 8;
     let wscale = (screenWidth / minAcross) / 140;
     let hscale = (screenHeight / minHigh) / 190;
-    CARD_SCALE = Math.min(wscale, hscale);
+    CARD_SCALE = Math.min(wscale, hscale, CARD_SCALE);
   }
   console.log(`Card Scale: ${CARD_SCALE}`);
 }
