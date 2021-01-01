@@ -177,7 +177,9 @@ let players = {};
 
 
 io.on('connection', function (socket) {
-  console.log('a user connected: ' + socket.id);
+  console.log(`Connected: ${socket.id}. There are ${Object.entries(players).length + 1} players.`);
+
+
   players[socket.id] = createPlayer(
       socket.id,
       Object.values(players).map(p => p.colour),
@@ -205,13 +207,17 @@ io.on('connection', function (socket) {
 
   // when a player disconnects, remove them from our players object
   socket.on('disconnect', function () {
-    console.log(`user disconnected: ${socket.id}`);
+    console.log(`Disconnected: ${socket.id}. There are ${Object.entries(players).length - 1} players.`);
 
     // remove this player from our players object
     delete players[socket.id];
 
     // emit a message to all players to remove this player
     io.emit('playerExit', socket.id);
+  });
+
+  socket.on('cardSelected', function (cardId) {
+    socket.broadcast.emit('cardSelected', cardId);
   });
 
   socket.on('cardClicked', function (cardId) {
