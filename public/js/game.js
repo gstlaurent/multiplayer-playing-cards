@@ -301,10 +301,14 @@ class Card {
 
   showFace(faceName) {
     this.image.setTexture(PLAYING_CARDS_TEXTURE, faceName);
+    if (this.ownerId === this.scene.id) {
+      this.image.setTint(0xaaaaaa)
+    }
   }
 
   showBack() {
     this.image.setTexture(CARD_BACK_TEXTURE, DECK_STYLE);
+    this.image.clearTint();
   }
 
   setNormalizedLocation(normalizedX, normalizedY) {
@@ -333,9 +337,11 @@ class Card {
   }
 
   setOwner(ownerId) {
+    this.ownerId = ownerId;
     if (ownerId === null) {
       // this will be null if everyone can see it, or no one can see it
       this.eyes.visible = false;
+      this.image.clearTint();
     } else {
       if (ownerId in this.scene.players) {
         this.eyes.setTintFill(this.scene.players[ownerId].colour);
