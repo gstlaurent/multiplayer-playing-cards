@@ -99,6 +99,7 @@ class Card {
 
 function createDeck() {
   let cards = CARD_NAMES.map((cardName, i) => new Card(cardName, i));
+  shuffleCards(cards);
   return cards;
 }
 
@@ -151,6 +152,8 @@ function createPlayer(id, unavailableColours) {
 
 let cards = createDeck(); // [Card]
 let players = {};
+
+
 
 io.on('connection', function (socket) {
   console.log('a user connected: ' + socket.id);
@@ -225,19 +228,13 @@ io.on('connection', function (socket) {
   });
 
   socket.on('collectClicked', function () {
-    cards.forEach(c => c.reset());
-    io.emit('collectCards', cards[0].x, cards[0].y);
   });
 
   socket.on('shuffleClicked', function () {
-    shuffleArray(cards);
-    for (let i in cards) {
-      cards[i].id = i;
-    }
-    io.emit('reinitializeCards', cards.map(c => c.toClient()));
-
+    cards.forEach(c => c.reset());
+    shuffleCards(cards);
+    io.emit('collectCards', cards[0].x, cards[0].y);
   });
-
 
   // // create a new player and add it to our players object
   // players[socket.id] = {
@@ -286,6 +283,14 @@ io.on('connection', function (socket) {
 server.listen(8081, function () {
   console.log(`Listening on ${server.address().port}`);
 });
+
+
+function shuffleCards(cards) {
+  shuffleArray(cards);
+  for (let i in cards) {
+    cards[i].id = i;
+  }
+}
 
 // https://stackoverflow.com/a/12646864
 function shuffleArray(array) {

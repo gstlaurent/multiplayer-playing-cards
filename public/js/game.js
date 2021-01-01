@@ -10,9 +10,9 @@ const DECK_STYLE = 'blue2';
 const PLAYING_CARDS_TEXTURE = 'playingCards';
 const CARD_BACK_TEXTURE = 'playingCardBacks';
 
-const CIRCLE_SIZE = 30;
+const CIRCLE_SIZE = 32;
 const BUFFER =  5;
-const TEXT_SIZE = 18;
+const TEXT_SIZE = CIRCLE_SIZE;
 
 const CLICK_SPEED = 200;
 const CLICK_DISTANCE = 10;
@@ -140,29 +140,29 @@ function create() {
   });
 
 // *************************************************************************************************
-// ************** Collect *****************************************************************************
+// ************** SHUFFLE *****************************************************************************
 // *************************************************************************************************
 
-  this.collectText = this.add.text(
-      (CIRCLE_SIZE + BUFFER) * 2,
-      BUFFER,
-      ['COLLECT']
+  this.shuffleText = this.add.text(
+    (CIRCLE_SIZE + BUFFER) * 2,
+    CIRCLE_SIZE - (TEXT_SIZE / 2),
+      ['SHUFFLE']
     )
     .setFontSize(TEXT_SIZE)
     .setFontFamily('Trebuchet MS')
     .setColor('#00ffff')
-    .setInteractive();
+    .setInteractive({useHandCursor: true});
 
-  this.collectText.on('pointerup', function () {
-    self.socket.emit("collectClicked");
+  this.shuffleText.on('pointerup', function () {
+    self.socket.emit("shuffleClicked");
   });
 
-  this.collectText.on('pointerover', function () {
-      self.collectText.setColor('#ff69b4');
+  this.shuffleText.on('pointerover', function () {
+      self.shuffleText.setColor('#ff69b4');
   });
 
-  this.collectText.on('pointerout', function () {
-      self.collectText.setColor('#00ffff');
+  this.shuffleText.on('pointerout', function () {
+      self.shuffleText.setColor('#00ffff');
   });
 
   this.socket.on('collectCards', function (normalizedX, normalizedY) {
@@ -184,52 +184,14 @@ function create() {
     });
   });
 
+} // END OF CREATE
+////////////////////////////////////////////////////////////////////////////////
 
 // *************************************************************************************************
-// ************** Shuffle *****************************************************************************
+// ************** Normalize *****************************************************************************
 // *************************************************************************************************
 
-this.shuffleText = this.add.text(
-    (CIRCLE_SIZE + BUFFER) * 2,
-    TEXT_SIZE + (BUFFER * 2),
-    ['SHUFFLE']
-  )
-  .setFontSize(TEXT_SIZE)
-  .setFontFamily('Trebuchet MS')
-  .setColor('#00ffff')
-  .setInteractive();
 
-this.shuffleText.on('pointerup', function () {
-  self.socket.emit("shuffleClicked");
-});
-
-this.shuffleText.on('pointerover', function () {
-  self.shuffleText.setColor('#ff69b4');
-});
-
-this.shuffleText.on('pointerout', function () {
-  self.shuffleText.setColor('#00ffff');
-});
-
-}
-
-// // this.input.on('dragend', function (pointer, gameObject, dropped) {
-
-  
-// //     // if (dropped) {
-// //     //     gameObject.
-// //     // }
-// // })
-
-// this.input.on('drop', function (pointer, gameObject, dropZone) {
-//   if (gameObject.isCard) {
-//     gameObject.showFace();
-//   }
-
-//   //self.socket.emit('cardPlayed', gameObject, self.isPlayerA);
-// })
-  
-// }
 
 function normalizeX(scene, denormalizedX) {
   return denormalizedX / scene.scale.width;
