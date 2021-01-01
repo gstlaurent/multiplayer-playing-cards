@@ -149,7 +149,7 @@ function createPlayer(id, unavailableColours) {
 // *************************************************************************************************
 
 
-let cards = createDeck();
+let cards = createDeck(); // [Card]
 let players = {};
 
 io.on('connection', function (socket) {
@@ -224,13 +224,21 @@ io.on('connection', function (socket) {
     socket.broadcast.emit('cardUpdate', card.toClient(undefined));
   });
 
-  socket.on('collectCardsClicked', function () {
-    for (const card of Object.values(cards)) {
-      card.reset();
-    }
+  socket.on('collectClicked', function () {
+    cards.forEach(c => c.reset());
     io.emit('collectCards', cards[0].x, cards[0].y);
   });
-  
+
+  socket.on('shuffleClicked', function () {
+    shuffleArray(cards);
+    for (let i in cards) {
+      cards[i].id = i;
+    }
+    io.emit('reinitializeCards', cards.map(c => c.toClient()));
+
+  });
+
+
   // // create a new player and add it to our players object
   // players[socket.id] = {
   //   rotation: 0,
@@ -278,3 +286,11 @@ io.on('connection', function (socket) {
 server.listen(8081, function () {
   console.log(`Listening on ${server.address().port}`);
 });
+
+// https://stackoverflow.com/a/12646864
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+  }
+}

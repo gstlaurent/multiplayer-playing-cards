@@ -2,7 +2,9 @@
 // ************** CONSTANTS ****************************************************
 // *****************************************************************************
 
-const CARD_SCALE = 0.5;
+let CARD_SCALE = 0.5;
+const DYNAMIC_SCALING = true; // when true, CARD_SCALE is set based
+                              // on the screen dimensions
 const DECK_STYLE = 'blue2';
  
 const PLAYING_CARDS_TEXTURE = 'playingCards';
@@ -25,8 +27,8 @@ var config = {
   width: 1400,
   height: 800,
   scale : {
-//    mode: Phaser.Scale.RESIZE,
-    autoCenter: Phaser.Scale.CENTER_BOTH
+   mode: Phaser.Scale.RESIZE,
+   autoCenter: Phaser.Scale.CENTER_BOTH
   },
   backgroundColor: 'rgba(0, 190, 0, 0)',
   scene: {
@@ -53,9 +55,23 @@ function preload() {
 // ************** CREATE *******************************************************
 // *****************************************************************************
 
+function setCardScale(screenWidth, screenHeight) {
+  if (DYNAMIC_SCALING) {
+    // Card Dimensions are 140 x 190
+    // Let's make sure the cards are small enough to fit this many cards:
+    let minAcross = 14
+    let minHigh = 8;
+    let wscale = (screenWidth / minAcross) / 140;
+    let hscale = (screenHeight / minHigh) / 190;
+    CARD_SCALE = Math.min(wscale, hscale);
+  }
+  console.log(`Card Scale: ${CARD_SCALE}`);
+}
 
 function create() {
-  var self = this;  
+  setCardScale(this.scale.width, this.scale.height);
+
+  let self = this;  
   this.socket = io();
   this.id = null;
   this.cards = {};
@@ -67,7 +83,6 @@ function create() {
     self.id = self.socket.id;
   }); 
   this.socket.on('currentPlayers', function (players) {
-    console.log(players);
     self.players = players;
     self.circle.clear();
     self.circle.fillStyle(players[self.id].colour);
@@ -84,7 +99,7 @@ function create() {
     });
   });
 
-  this.input.on('drag', function (pointer, gameObject, dragX, dragY) {
+ this.input.on('drag', function (pointer, gameObject, dragX, dragY) {
     let card = findCard(self, gameObject);
     card.setLocation(dragX, dragY);
     
@@ -102,7 +117,6 @@ function create() {
   this.socket.on('cardUpdate', function (newCard) {
     let card = self.cards[newCard.id]
     card.update(newCard);
-    card.setOwner(newCard.ownerId, newCard.cardName);
   });
 
   // Brings a card to the top when it is selected
@@ -129,15 +143,18 @@ function create() {
 // ************** Collect *****************************************************************************
 // *************************************************************************************************
 
-  this.collectText =
-    this.add.text((CIRCLE_SIZE + BUFFER) * 2, CIRCLE_SIZE - (TEXT_SIZE / 2), ['COLLECT'])
-      .setFontSize(TEXT_SIZE)
-      .setFontFamily('Trebuchet MS')
-      .setColor('#00ffff')
-      .setInteractive();
+  this.collectText = this.add.text(
+      (CIRCLE_SIZE + BUFFER) * 2,
+      BUFFER,
+      ['COLLECT']
+    )
+    .setFontSize(TEXT_SIZE)
+    .setFontFamily('Trebuchet MS')
+    .setColor('#00ffff')
+    .setInteractive();
 
   this.collectText.on('pointerup', function () {
-    self.socket.emit("collectCardsClicked");
+    self.socket.emit("collectClicked");
   });
 
   this.collectText.on('pointerover', function () {
@@ -166,7 +183,33 @@ function create() {
       onComplete: () => cards.forEach(c => c.setLocation(x, y))
     });
   });
- 
+
+
+// *************************************************************************************************
+// ************** Shuffle *****************************************************************************
+// *************************************************************************************************
+
+this.shuffleText = this.add.text(
+    (CIRCLE_SIZE + BUFFER) * 2,
+    TEXT_SIZE + (BUFFER * 2),
+    ['SHUFFLE']
+  )
+  .setFontSize(TEXT_SIZE)
+  .setFontFamily('Trebuchet MS')
+  .setColor('#00ffff')
+  .setInteractive();
+
+this.shuffleText.on('pointerup', function () {
+  self.socket.emit("shuffleClicked");
+});
+
+this.shuffleText.on('pointerover', function () {
+  self.shuffleText.setColor('#ff69b4');
+});
+
+this.shuffleText.on('pointerout', function () {
+  self.shuffleText.setColor('#00ffff');
+});
 
 }
 
@@ -235,7 +278,7 @@ class Card {
     // To ensure eyes are in the correct place
     this.setLocation(x, y);
 
-    this.setOwner(ownerId, faceName);
+    this.setOwner(ownerId);
 
   }
 
