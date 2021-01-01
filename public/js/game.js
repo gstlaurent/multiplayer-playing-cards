@@ -16,6 +16,9 @@ const TEXT_SIZE = CIRCLE_SIZE;
 
 const CLICK_SPEED = 200;
 const CLICK_DISTANCE = 10;
+
+const DEAL_SIZE = 9;
+
 // *****************************************************************************
 // ************** CONFIG *******************************************************
 // *****************************************************************************
@@ -153,19 +156,20 @@ function create() {
     .setColor('#00ffff')
     .setInteractive({useHandCursor: true});
 
-  this.shuffleText.on('pointerup', function () {
-    self.socket.emit("shuffleClicked");
-  });
-
-  this.shuffleText.on('pointerover', function () {
+    
+    this.shuffleText.on('pointerover', function () {
       self.shuffleText.setColor('#ff69b4');
-  });
-
-  this.shuffleText.on('pointerout', function () {
+    });
+    
+    this.shuffleText.on('pointerout', function () {
       self.shuffleText.setColor('#00ffff');
-  });
+    });
+    
+    this.shuffleText.on('pointerup', function () {
+      self.socket.emit("shuffleClicked");
+    });
 
-  this.socket.on('collectCards', function (normalizedX, normalizedY) {
+    this.socket.on('collectCards', function (normalizedX, normalizedY) {
     const x = denormalizeX(self, normalizedX);
     const y = denormalizeY(self, normalizedY);
 
@@ -183,6 +187,56 @@ function create() {
       onComplete: () => cards.forEach(c => c.setLocation(x, y))
     });
   });
+
+// *************************************************************************************************
+// ************** DEAL *****************************************************************************
+// *************************************************************************************************
+
+  this.dealText = this.add.text(
+    self.scale.width - (TEXT_SIZE * 4),
+    CIRCLE_SIZE - (TEXT_SIZE / 2),
+      [`DEAL ${DEAL_SIZE}`]
+    )
+    .setFontSize(TEXT_SIZE)
+    .setFontFamily('Trebuchet MS')
+    .setColor('#00ffff')
+    .setInteractive({useHandCursor: true});
+
+  
+  this.dealText.on('pointerover', function () {
+    self.dealText.setColor('#ff69b4');
+  });
+  
+  this.dealText.on('pointerout', function () {
+    self.dealText.setColor('#00ffff');
+  });
+  
+  this.dealText.on('pointerup', function () {
+    self.socket.emit("dealClicked", DEAL_SIZE);
+  });
+
+  this.socket.on('deal', function (dealtCards) {
+    for (newCard of dealtCards) {
+      let card = self.cards[newCard.id]
+      card.update(newCard);
+    }
+
+    // const x = denormalizeX(self, normalizedX);
+    // const y = denormalizeY(self, normalizedY);
+
+    // const cards = Object.values(self.cards)
+    // cards.forEach( card => {
+    //   card.showBack();
+    //   card.setOwner(null);
+    // });
+
+    // self.tweens.add({
+    //   targets: cards.map(c => c.image),
+    //   duration: 200,
+    //   x: x,
+    //   y: y,
+    //   onComplete: () => cards.forEach(c => c.setLocation(x, y))
+    });
 
 } // END OF CREATE
 ////////////////////////////////////////////////////////////////////////////////

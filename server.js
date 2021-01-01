@@ -1,8 +1,10 @@
 const assert = require('assert').strict;
-var express = require('express');
-var app = express();
-var server = require('http').Server(app);
-var io = require('socket.io')(server);
+const util = require('util');
+
+const express = require('express');
+let app = express();
+let server = require('http').Server(app);
+let io = require('socket.io')(server);
 
 app.use(express.static(__dirname + '/public'));
 
@@ -108,25 +110,33 @@ function createDeck() {
 // ************** Player *****************************************************************************
 // *************************************************************************************************
 class Player {
-  constructor (id, colour) {
+  constructor (id, colour, handOrigin) {
     this.id = id;
     this.colour = colour;
+    this.handOrigin = handOrigin;
   }
 }
 
+const HAND_ORIGINS = [
+  [0.5, 0.9],
+  [0.5, 0.1],
+  [0.95, 0.5],
+  [0.05, 0.5]
+]
+
 const COLOURS = [
+  0x000000, // black
   0x0062ff, // blue
   0xeb7434, // orange
   0xbf1d00, // red
-  0x000000, // black
   0xffffff, // white
   0x00b5d1, // turqoise
   0x006600, // dark green
 ];
 
-function createPlayer(id, unavailableColours) {
-  var colour = null;
-  for (var i = 0; i < 100; i++) {
+function createPlayer(id, unavailableColours, unavailableHandOrigins) {
+  let colour = null;
+  for (let i = 0; i < 100; i++) {
     let prelimColour = COLOURS[Math.floor(Math.random() * COLOURS.length)];
     if (!unavailableColours.includes(prelimColour)) {
       colour = prelimColour;
@@ -137,7 +147,18 @@ function createPlayer(id, unavailableColours) {
     colour = COLOURS[0];
   }
 
-  return new Player(id, colour);
+  let handOrigin = null;
+  for (const ho of HAND_ORIGINS) {
+    if (!unavailableHandOrigins.includes(ho)) {
+      handOrigin = ho;
+      break;
+    }
+  }
+  if (handOrigin === null) {
+    handOrigin = [0, 0];
+  }
+
+  return new Player(id, colour, handOrigin);
 }
 
 
@@ -157,7 +178,11 @@ let players = {};
 
 io.on('connection', function (socket) {
   console.log('a user connected: ' + socket.id);
-  players[socket.id] = createPlayer(socket.id, Object.values(players).map(p => p.colour));
+  players[socket.id] = createPlayer(
+      socket.id,
+      Object.values(players).map(p => p.colour),
+      Object.values(players).map(p => p.handOrigin)
+    );
 
   // send the players object to the new player
   socket.emit('currentPlayers', players);
@@ -236,53 +261,80 @@ io.on('connection', function (socket) {
     io.emit('collectCards', cards[0].x, cards[0].y);
   });
 
-  // // create a new player and add it to our players object
-  // players[socket.id] = {
-  //   rotation: 0,
-  //   x: Math.floor(Math.random() * 700) + 50,
-  //   y: Math.floor(Math.random() * 500) + 50,
-  //   playerId: socket.id,
-  //   team: (Math.floor(Math.random() * 2) == 0) ? 'red' : 'blue'
-  // };
-  
-  // // send the players object to the new player
-  // socket.emit('currentPlayers', players);
+  socket.on('dealClicked', function (dealSize) {
+    let hands = {};
+    for (const [playerId, player] of Object.entries(players)) {
+      hands[playerId] = [];
+    }
+    
+    // assumes the cards are collected
+    let i = 0; // cards index
+    for (let d = 0; d < dealSize; d++) {
+      for (const playerId in players) {
+        if (i >= cards.length) {
+          console.log("Dealing: Ran out of cards");
+          break;
+        }
+        hands[playerId].push(cards[i]);
+        i++;
+      }
+    }
 
-  // // send the star object to the new player
-  // socket.emit('starLocation', star);
+    let flatHands = [];    
+    for (const [playerId, hand] of Object.entries(hands)) {
+      const ho = players[playerId].handOrigin;
+      const hos = buildSpread(ho, dealSize);
+      hand.forEach( (card, i) => {
+        card.ownerId = playerId;
+        card.isFaceUp = false;
+        card.x = hos[i][0];
+        card.y = hos[i][1];
+        flatHands.push(card);
+      });
+    }
 
-  // // send the current scores
-  // socket.emit('scoreUpdate', scores);
+    // customize the output for each player
+    for (const playerId in players) {
+      let dealtCards = flatHands.map(card => card.toClient(playerId));
+      io.to(playerId).emit("deal", dealtCards);
+    }
 
-  // // update all other players of the new player
-  // socket.broadcast.emit('newPlayer', players[socket.id]);
+  });
 
-
-  // // when a player moves, update the player data
-  // socket.on('playerMovement', function (movementData) {
-  //   players[socket.id].x = movementData.x;
-  //   players[socket.id].y = movementData.y;
-  //   players[socket.id].rotation = movementData.rotation;
-  //   // emit a message to all players about the player that moved
-  //   socket.broadcast.emit('playerMoved', players[socket.id]);
-  // });
-
-  // socket.on('starCollected', function () {
-  //   if (players[socket.id].team === 'red') {
-  //     scores.red += 10;
-  //   } else {
-  //     scores.blue += 10;
-  //   }
-  //   star.x = Math.floor(Math.random() * 700) + 50;
-  //   star.y = Math.floor(Math.random() * 500) + 50;
-  //   io.emit('starLocation', star);
-  //   io.emit('scoreUpdate', scores);
-  // });
 });
+
+
 
 server.listen(8081, function () {
   console.log(`Listening on ${server.address().port}`);
 });
+
+
+function buildSpread(origin, size) {
+  // assumes origin will be centered around 0.5 either horiz or veritc
+  // using trig, it would be possible to genearlize this
+
+  // The dealt cards will take up 2/3 of the area
+  const section = 0.67;
+  const split = section / (size - 1);
+  const start = (1 - section) / 2;
+
+  let ordinates = [];
+  for (let ord = start, i = 0; i < size; i++, ord += split) {
+    ordinates.push(ord);
+  }
+
+  let spread = [];
+  if (origin[0] === 0.5) {
+    // centered around x, so cards line up on y
+    spread = ordinates.map(x => [x, origin[1]]);
+  } else if (origin[1] === 0.5) {
+    // centered around y, so cards line up on x
+    spread = ordinates.map(y => [origin[0], y]);
+  }
+
+  return spread;
+}
 
 
 function shuffleCards(cards) {
