@@ -1,7 +1,7 @@
 {
-  "name": "multiplayer-rummy",
+  "name": "multiplayer-playing-cards",
   "version": "1.0.0",
-  "description": "Multiplayer Virtual Card Game",
+  "description": "Multiplayer Generic Card Game",
   "main": "server.js",
   "scripts": {
     "start": "nodemon server.js"
