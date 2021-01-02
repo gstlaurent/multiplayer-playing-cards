@@ -121,7 +121,9 @@ const HAND_ORIGINS = [
   [0.5, 0.9],
   [0.5, 0.1],
   [0.95, 0.5],
-  [0.05, 0.5]
+  [0.05, 0.5],
+  [0.5, 0.67],
+  [0.5, 0.33]
 ]
 
 const COLOURS = [
@@ -155,7 +157,7 @@ function createPlayer(id, unavailableColours, unavailableHandOrigins) {
     }
   }
   if (handOrigin === null) {
-    handOrigin = [0, 0];
+    handOrigin = [0.5, 0.5];
   }
 
   return new Player(id, colour, handOrigin);
@@ -289,12 +291,12 @@ io.on('connection', function (socket) {
     let flatHands = [];    
     for (const [playerId, hand] of Object.entries(hands)) {
       const ho = players[playerId].handOrigin;
-      const hos = buildSpread(ho, dealSize);
+      const cardLocs = buildSpread(ho, dealSize);
       hand.forEach( (card, i) => {
         card.ownerId = playerId;
         card.isFaceUp = false;
-        card.x = hos[i][0];
-        card.y = hos[i][1];
+        card.x = cardLocs[i][0];
+        card.y = cardLocs[i][1];
         flatHands.push(card);
       });
     }
