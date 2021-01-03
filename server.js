@@ -227,7 +227,7 @@ io.on('connection', function (socket) {
     socket.broadcast.emit('cardSelected', cardId);
   });
 
-  socket.on('cardClicked', function (cardId) {
+  socket.on('cardDoubleClicked', function (cardId) {
     let card = cards[cardId];
     // There are 3 states, that cycle through one another:
     //  1 - no owner and face down

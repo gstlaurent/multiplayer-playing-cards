@@ -14,8 +14,7 @@ const CIRCLE_SIZE = 32;
 const BUFFER =  5;
 const TEXT_SIZE = CIRCLE_SIZE;
 
-const CLICK_SPEED = 200;
-const CLICK_DISTANCE = 5;
+const DOUBLE_CLICK_DELAY = 350;
 
 const DEAL_SIZE = 9;
 
@@ -74,6 +73,7 @@ function setCardScale(screenWidth, screenHeight) {
 function create() {
   setCardScale(this.scale.width, this.scale.height);
 
+
   let self = this;  
   this.socket = io();
   this.id = null;
@@ -95,7 +95,6 @@ function create() {
   this.socket.on('newPlayer', (player) => this.players[player.id] = player);
   this.socket.on('playerExit', (player) => delete this.players[player.id]);
 
-
   this.socket.on('initializeCards', function (cards) {
     cards.forEach( card => {
       self.cards[card.id] = new Card(card.id, self, card.x, card.y, card.cardName, card.ownerId);
@@ -104,6 +103,8 @@ function create() {
 
  this.input.on('drag', function (pointer, gameObject, dragX, dragY) {
     let card = findCard(self, gameObject);
+    if (card === null) return;
+
     card.setLocation(dragX, dragY);
     
     self.socket.emit('cardDragged', {
@@ -125,20 +126,25 @@ function create() {
   // Brings a card to the top when it is selected
   this.input.on('dragstart', function (pointer, gameObject) {
     let card = findCard(self, gameObject);
+    if (card === null) return;
+
     card.bringToTop();
     self.socket.emit('cardSelected', card.id);
   });
   this.socket.on('cardSelected', cardId => self.cards[cardId].bringToTop());
 
-  this.input.on('dragend', function (pointer, gameObject) {
-    // console.log(`Dragend: duration: ${pointer.getDuration()}, distance ${pointer.getDistance()}`);
-    const isQuick = pointer.getDuration() < CLICK_SPEED;
-    const isClose = pointer.getDistance() < CLICK_DISTANCE;
-    const isClick = isQuick && isClose;
+  // Detecting a Double-Click
+  // https://phaser.discourse.group/t/double-tap/3051/2
+  let lastTime = 0;
+  this.input.on("pointerdown", (pointer, gameObjects)=>{
+    let clickDelay = this.time.now - lastTime;
+    lastTime = this.time.now;
+    if(clickDelay < DOUBLE_CLICK_DELAY) {
+      // It is a double-click, so let's move the card to the next state.
+      let card = findCard(self, gameObjects[0]);
+      if (card === null) return;
 
-    if (isClick) {
-      let card = findCard(self, gameObject);
-      self.socket.emit('cardClicked', card.id)
+      self.socket.emit('cardDoubleClicked', card.id)
     }
   });
 
@@ -221,6 +227,7 @@ function create() {
       card.update(newCard);
     }
 
+
     // const x = denormalizeX(self, normalizedX);
     // const y = denormalizeY(self, normalizedY);
 
@@ -264,7 +271,12 @@ function denormalizeY(scene, normalizedY) {
 }
 
 function findCard(scene, gameObject) {
-    return scene.cards[gameObject.data.values.cardId];
+  let cardId = gameObject.getData('cardId');
+  if (cardId !== undefined) {
+    return scene.cards[cardId];
+  } else {
+    return null;
+  }
 }
 
 // *************************************************************************************************
@@ -344,7 +356,7 @@ class Card {
     } else {
       if (ownerId in this.scene.players) {
         this.eyes.setTintFill(this.scene.players[ownerId].colour);
-        this.eyes.visible = true;
+        this.eyes.visible = ownerId != this.scene.id;
       }
     }
   }
