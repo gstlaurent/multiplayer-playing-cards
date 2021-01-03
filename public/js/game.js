@@ -15,7 +15,7 @@ const BUFFER =  5;
 const TEXT_SIZE = CIRCLE_SIZE;
 
 const CLICK_SPEED = 200;
-const CLICK_DISTANCE = 10;
+const CLICK_DISTANCE = 5;
 
 const DEAL_SIZE = 9;
 
@@ -130,11 +130,10 @@ function create() {
   });
   this.socket.on('cardSelected', cardId => self.cards[cardId].bringToTop());
 
-  // Brings a card to the top when it is selected
   this.input.on('dragend', function (pointer, gameObject) {
-    // console.log(`${pointer.getDuration()}, ${pointer.distance}`);
+    // console.log(`Dragend: duration: ${pointer.getDuration()}, distance ${pointer.getDistance()}`);
     const isQuick = pointer.getDuration() < CLICK_SPEED;
-    const isClose = pointer.distance < CLICK_SPEED;
+    const isClose = pointer.getDistance() < CLICK_DISTANCE;
     const isClick = isQuick && isClose;
 
     if (isClick) {
