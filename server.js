@@ -132,7 +132,6 @@ const HAND_ORIGINS = [
 ]
 
 const COLOURS = [
-  0x000000, // black
   0x0062ff, // blue
   0xeb7434, // orange
   0xbf1d00, // red
@@ -309,7 +308,7 @@ io.on('connection', function (socket) {
     // customize the output for each player
     for (const playerId in players) {
       let dealtCards = flatHands.map(card => card.toClient(playerId));
-      io.to(playerId).emit("deal", dealtCards);
+      io.to(playerId).emit("deal", dealtCards, socket.id);
     }
 
   });

@@ -79,7 +79,8 @@ function create() {
   this.id = null;
   this.cards = {};
   this.players = {};
-  this.circle = self.add.graphics();
+  this.circle = self.add.graphics();  // displays current player's colour
+  this.rectangle = self.add.graphics(); // displays colour of last dealer
   
   this.socket.on('connect', function () {
     console.log(`Connected with id ${self.socket.id}`);
@@ -88,7 +89,7 @@ function create() {
   this.socket.on('currentPlayers', function (players) {
     self.players = players;
     self.circle.clear();
-    self.circle.fillStyle(players[self.id].colour);
+    self.circle.fillStyle(getPlayerColour(self, self.id));
     self.circle.fillCircle(CIRCLE_SIZE, CIRCLE_SIZE, CIRCLE_SIZE - BUFFER);
     self.socket.emit('playersInitialized');
   });
@@ -221,11 +222,29 @@ function create() {
     self.socket.emit("dealClicked", DEAL_SIZE);
   });
 
-  this.socket.on('deal', function (dealtCards) {
+  this.socket.on('deal', function (dealtCards, dealerId) {
+    // Add dealer-indicating rectangle under the deck
+    console.log('deal');
+
+    self.rectangle.clear();
+    self.rectangle.fillStyle(getPlayerColour(self, dealerId));
+    let topLeft = [];
+    self.dealText.getTopLeft(topLeft);
+    self.rectangle.fillRect(
+      topLeft.x,
+      topLeft.y,
+      self.dealText.width,
+      self.dealText.height);
+  
+    // Now distribute the cards
     for (newCard of dealtCards) {
       let card = self.cards[newCard.id]
       card.update(newCard);
     }
+    
+
+  });
+  
 
 
     // const x = denormalizeX(self, normalizedX);
@@ -243,7 +262,6 @@ function create() {
     //   x: x,
     //   y: y,
     //   onComplete: () => cards.forEach(c => c.setLocation(x, y))
-    });
 
 } // END OF CREATE
 ////////////////////////////////////////////////////////////////////////////////
@@ -355,7 +373,7 @@ class Card {
       this.image.clearTint();
     } else {
       if (ownerId in this.scene.players) {
-        this.eyes.setTintFill(this.scene.players[ownerId].colour);
+        this.eyes.setTintFill(getPlayerColour(this.scene, ownerId));
         this.eyes.visible = ownerId != this.scene.id;
       }
     }
@@ -382,3 +400,10 @@ class Card {
 function update() {
 }
 
+function getPlayerColour (scene, playerId) {
+  if (scene.players[playerId]) {
+    return scene.players[playerId].colour;
+  } else {
+    return 0x000000; // black
+  }
+}
