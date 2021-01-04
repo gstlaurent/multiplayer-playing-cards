@@ -72,7 +72,8 @@ function setCardScale(screenWidth, screenHeight) {
 
 function create() {
   setCardScale(this.scale.width, this.scale.height);
-
+  this.originalCardScale = CARD_SCALE;
+  this.selectedCardSize = 2; // default size is 2 of (1,2,3)
 
   let self = this;  
   this.socket = io();
@@ -81,6 +82,7 @@ function create() {
   this.players = {};
   this.circle = self.add.graphics();  // displays current player's colour
   this.rectangle = self.add.graphics(); // displays colour of last dealer
+  
   
   this.socket.on('connect', function () {
     console.log(`Connected with id ${self.socket.id}`);
@@ -262,12 +264,112 @@ function create() {
         onComplete: () => card.update(newCard)
       });
     });
-    
-
   });
+
+  // *************************************************************************************************
+  // ************** Card Size *****************************************************************************
+  // *************************************************************************************************
+  this.cardSize = this.add.text(
+    (self.scale.width / 2) - (TEXT_SIZE * 4),
+    CIRCLE_SIZE - (TEXT_SIZE / 2),
+      ['Card Size:']
+    )
+    .setFontSize(TEXT_SIZE)
+    .setFontFamily('Trebuchet MS')
+    .setColor('#000000');
+
+    this.cardSize_1 = this.add.text(
+      (self.scale.width / 2) + (TEXT_SIZE),
+      CIRCLE_SIZE - (TEXT_SIZE / 2),
+        ['1']
+      )
+      .setFontSize(TEXT_SIZE)
+      .setFontFamily('Trebuchet MS')
+      .setColor('#00ffff')
+      .setInteractive({useHandCursor: true});
   
+    
+    this.cardSize_1.on('pointerover', function () {
+      if (self.selectedCardSize !== 1) {
+        self.cardSize_1.setColor('#ff69b4');
+      }
+    });
+    
+    this.cardSize_1.on('pointerout', function () {
+      if (self.selectedCardSize !== 1) {
+        self.cardSize_1.setColor('#00ffff');
+      }
+    });
+    
+    this.cardSize_1.on('pointerdown', function () {
+      self.selectedCardSize = 1;
+      updateCardScale(self.originalCardScale / 2, self.cards);
+      self.cardSize_1.setColor('#000000');
+      self.cardSize_2.setColor('#00ffff');
+      self.cardSize_3.setColor('#00ffff');
+    });
 
+    this.cardSize_2 = this.add.text(
+      (self.scale.width / 2 ) + ((TEXT_SIZE) * 2),
+      CIRCLE_SIZE - (TEXT_SIZE / 2),
+        ['2']
+      )
+      .setFontSize(TEXT_SIZE)
+      .setFontFamily('Trebuchet MS')
+      .setColor('#000000')
+      .setInteractive({useHandCursor: true});
+  
+    
+    this.cardSize_2.on('pointerover', function () {
+      if (self.selectedCardSize !== 2) {
+        self.cardSize_2.setColor('#ff69b4');
+      }
+    });
+    
+    this.cardSize_2.on('pointerout', function () {
+      if (self.selectedCardSize !== 2) {
+        self.cardSize_2.setColor('#00ffff');
+      }
+    });
+    
+    this.cardSize_2.on('pointerdown', function () {
+      self.selectedCardSize = 2;
+      updateCardScale(self.originalCardScale, self.cards);
+      self.cardSize_1.setColor('#00ffff');
+      self.cardSize_2.setColor('#000000');
+      self.cardSize_3.setColor('#00ffff');
+    });
 
+    this.cardSize_3 = this.add.text(
+      (self.scale.width / 2 ) + ((TEXT_SIZE) * 3),
+      CIRCLE_SIZE - (TEXT_SIZE / 2),
+        ['3']
+      )
+      .setFontSize(TEXT_SIZE)
+      .setFontFamily('Trebuchet MS')
+      .setColor('#00ffff')
+      .setInteractive({useHandCursor: true});
+  
+    
+    this.cardSize_3.on('pointerover', function () {
+      if (self.selectedCardSize !== 3) {
+        self.cardSize_3.setColor('#ff69b4');
+      }
+    });
+    
+    this.cardSize_3.on('pointerout', function () {
+      if (self.selectedCardSize !== 3) {
+        self.cardSize_3.setColor('#00ffff');
+      }
+    });
+    
+    this.cardSize_3.on('pointerdown', function () {
+      self.selectedCardSize = 3;
+      updateCardScale(self.originalCardScale * 2, self.cards);
+      self.cardSize_1.setColor('#00ffff');
+      self.cardSize_2.setColor('#00ffff');
+      self.cardSize_3.setColor('#000000');
+    });
 } // END OF CREATE
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -275,7 +377,12 @@ function create() {
 // ************** Normalize *****************************************************************************
 // *************************************************************************************************
 
-
+function updateCardScale(newScale, cards) {
+  CARD_SCALE = newScale;
+  for (let card of Object.values(cards)) {
+    card.setCardScale(newScale);
+  }
+}
 
 function normalizeX(scene, denormalizedX) {
   return denormalizedX / scene.scale.width;
@@ -316,21 +423,29 @@ class Card {
     this.image = faceName === null
        ? scene.add.image(x, y, CARD_BACK_TEXTURE, DECK_STYLE)
        : scene.add.image(x, y, PLAYING_CARDS_TEXTURE, faceName);
-    this.image.setScale(CARD_SCALE).setInteractive();
+    this.image.setInteractive();
     this.image.setData('cardId', cardId);
     scene.input.setDraggable(this.image);
 
-    // Create eyes that are half the width of the card and along its top
     this.eyes = scene.add.image(x, y, 'eyes')
-    let eyesScale = (this.image.displayWidth / 2) / this.eyes.width;
-    this.eyes.setScale(eyesScale);
     this.eyes.visible = false;
 
-    // To ensure eyes are in the correct place
-    this.setLocation(x, y);
+    this.setCardScale(CARD_SCALE);
 
     this.setOwner(ownerId);
 
+  }
+
+
+  setCardScale(newScale) {
+    this.image.setScale(newScale);
+    
+    // Create eyes that are half the width of the card and along its top
+    let eyesScale = (this.image.displayWidth / 2) / this.eyes.width;
+    this.eyes.setScale(eyesScale);
+    
+    // To ensure eyes are in the correct place
+    this.setLocation(this.image.x, this.image.y);  
   }
 
   showFace(faceName) {
