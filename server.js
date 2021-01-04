@@ -292,23 +292,29 @@ io.on('connection', function (socket) {
       }
     }
 
-    let flatHands = [];    
+    let dealtHands = {};    
     for (const [playerId, hand] of Object.entries(hands)) {
       const ho = players[playerId].handOrigin;
       const cardLocs = buildSpread(ho, dealSize);
-      hand.forEach( (card, i) => {
+      dealtHands[playerId] = hand.map( (card, i) => {
         card.ownerId = playerId;
         card.isFaceUp = false;
         card.x = cardLocs[i][0];
         card.y = cardLocs[i][1];
-        flatHands.push(card);
+        return card
       });
     }
 
     // customize the output for each player
-    for (const playerId in players) {
-      let dealtCards = flatHands.map(card => card.toClient(playerId));
-      io.to(playerId).emit("deal", dealtCards, socket.id);
+    for (const playerId in dealtHands) {
+      // playerId is the for the player hands are being prepared for emit.
+      let playerHands = {};
+      for (const [pId, hand] of Object.entries(dealtHands)) {
+        // pId is the player corresponding to these cards, whose properies we
+        //  know based on the above playerId
+        playerHands[pId] = hand.map(card => card.toClient(playerId));
+      }
+      io.to(playerId).emit("deal", playerHands, socket.id);
     }
 
   });

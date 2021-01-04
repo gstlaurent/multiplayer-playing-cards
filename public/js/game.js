@@ -222,10 +222,8 @@ function create() {
     self.socket.emit("dealClicked", DEAL_SIZE);
   });
 
-  this.socket.on('deal', function (dealtCards, dealerId) {
+  this.socket.on('deal', function (playerHands, dealerId) {
     // Add dealer-indicating rectangle under the deck
-    console.log('deal');
-
     self.rectangle.clear();
     self.rectangle.fillStyle(getPlayerColour(self, dealerId));
     let topLeft = [];
@@ -237,31 +235,38 @@ function create() {
       self.dealText.height);
   
     // Now distribute the cards
-    for (newCard of dealtCards) {
-      let card = self.cards[newCard.id]
-      card.update(newCard);
+    let hands = Object.values(playerHands);
+    let flatHands = [];
+    let maxHandSize = hands.reduce((max, hand) => Math.max(max, hand.length), 0);
+    for (let c = 0; c < maxHandSize; c++) {
+      for (let p = 0; p < hands.length; p++) {
+        let dealtCard = hands[p][c]
+        if (dealtCard) {
+          flatHands.push(dealtCard);
+        }
+      }
     }
+    console.log(flatHands);
+    flatHands.forEach( (newCard, i) => {
+      let card = self.cards[newCard.id]
+
+      const x = denormalizeX(self, newCard.x);
+      const y = denormalizeY(self, newCard.y);
+
+      self.tweens.add({
+        targets: card.image,
+        delay: i * 25,
+        duration: 200,
+        x: x,
+        y: y,
+        onComplete: () => card.update(newCard)
+      });
+    });
     
 
   });
   
 
-
-    // const x = denormalizeX(self, normalizedX);
-    // const y = denormalizeY(self, normalizedY);
-
-    // const cards = Object.values(self.cards)
-    // cards.forEach( card => {
-    //   card.showBack();
-    //   card.setOwner(null);
-    // });
-
-    // self.tweens.add({
-    //   targets: cards.map(c => c.image),
-    //   duration: 200,
-    //   x: x,
-    //   y: y,
-    //   onComplete: () => cards.forEach(c => c.setLocation(x, y))
 
 } // END OF CREATE
 ////////////////////////////////////////////////////////////////////////////////
