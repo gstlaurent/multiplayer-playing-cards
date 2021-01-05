@@ -189,21 +189,23 @@ function create() {
 
   self.tweens.add({
     targets: cards.map(c => c.image),
-    duration: 750,
+    duration: 200,
     delay: () => Phaser.Math.Between(0, 200),
-    ease: 'elastic',
+    ease: 'sine',
     x: () => x + Phaser.Math.Between(-25, 25),
     y: () => y + Phaser.Math.Between(-25, 25),
-    onComplete: () => 
-      self.tweens.add({
-        targets: cards.map(c => c.image),
-        duration: 200,
-        delay: 0,
-        ease: 'sine',
-        x: x,
-        y: y,
-        onComplete: () => cards.forEach(c => c.setLocation(x, y))
-      })
+    onComplete: () => {
+        cards[Phaser.Math.Between(0, cards.length - 1)].bringToTop();
+        self.tweens.add({
+          targets: cards.map(c => c.image),
+          duration: 200,
+          delay: 0,
+          ease: 'sine',
+          x: x,
+          y: y,
+          onComplete: () => cards.forEach(c => c.setLocation(x, y))
+        });
+      }
     });
   });
 
@@ -258,6 +260,9 @@ function create() {
         }
       }
     }
+
+    flatHands.reverse().forEach(c => self.cards[c.id].bringToTop());
+    flatHands.reverse();
 
     flatHands.forEach( (newCard, i) => {
       let card = self.cards[newCard.id]
