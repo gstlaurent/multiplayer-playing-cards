@@ -190,7 +190,9 @@ function create() {
 
     self.tweens.add({
       targets: cards.map(c => c.image),
-      duration: 200,
+      duration: 750,
+      delay: () => Phaser.Math.Between(0, 200),
+      ease: 'elastic',
       x: x,
       y: y,
       onComplete: () => cards.forEach(c => c.setLocation(x, y))
