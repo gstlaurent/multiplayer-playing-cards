@@ -336,13 +336,25 @@ function buildSpread(origin, size) {
     ordinates.push(ord);
   }
 
+  // The 'spread' has the cards of a hand in the order that they will be dealt
+  // In order to produce a clockwise pinwheel-like animation when they are
+  //  dealt, we have to make sure that cards on opposite sides of the board
+  //  are dealt in opposite orders (hence the 1-x or 1-y).
   let spread = [];
   if (origin[0] === 0.5) {
     // centered around x, so cards line up on y
-    spread = ordinates.map(x => [x, origin[1]]);
+    if (origin[1] < 0.5) {
+      spread = ordinates.map(x => [x, origin[1]]);
+    } else {
+      spread = ordinates.map(x => [1 - x, origin[1]]);
+    }
   } else if (origin[1] === 0.5) {
     // centered around y, so cards line up on x
-    spread = ordinates.map(y => [origin[0], y]);
+    if (origin[0] > 0.5) {
+      spread = ordinates.map(y => [origin[0], y]);
+    } else {
+      spread = ordinates.map(y => [origin[0], 1 - y]);
+    }
   }
 
   return spread;
