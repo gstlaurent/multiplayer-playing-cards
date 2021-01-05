@@ -164,38 +164,46 @@ function create() {
     .setFontFamily('Trebuchet MS')
     .setColor('#00ffff')
     .setInteractive({useHandCursor: true});
+  
+  this.shuffleText.on('pointerover', function () {
+    self.shuffleText.setColor('#ff69b4');
+  });
+  
+  this.shuffleText.on('pointerout', function () {
+    self.shuffleText.setColor('#00ffff');
+  });
+  
+  this.shuffleText.on('pointerup', function () {
+    self.socket.emit("shuffleClicked");
+  });
 
-    
-    this.shuffleText.on('pointerover', function () {
-      self.shuffleText.setColor('#ff69b4');
-    });
-    
-    this.shuffleText.on('pointerout', function () {
-      self.shuffleText.setColor('#00ffff');
-    });
-    
-    this.shuffleText.on('pointerup', function () {
-      self.socket.emit("shuffleClicked");
-    });
+  this.socket.on('collectCards', function (normalizedX, normalizedY) {
+  const x = denormalizeX(self, normalizedX);
+  const y = denormalizeY(self, normalizedY);
 
-    this.socket.on('collectCards', function (normalizedX, normalizedY) {
-    const x = denormalizeX(self, normalizedX);
-    const y = denormalizeY(self, normalizedY);
+  const cards = Object.values(self.cards)
+  cards.forEach( card => {
+    card.showBack();
+    card.setOwner(null);
+  });
 
-    const cards = Object.values(self.cards)
-    cards.forEach( card => {
-      card.showBack();
-      card.setOwner(null);
-    });
-
-    self.tweens.add({
-      targets: cards.map(c => c.image),
-      duration: 750,
-      delay: () => Phaser.Math.Between(0, 200),
-      ease: 'elastic',
-      x: x,
-      y: y,
-      onComplete: () => cards.forEach(c => c.setLocation(x, y))
+  self.tweens.add({
+    targets: cards.map(c => c.image),
+    duration: 750,
+    delay: () => Phaser.Math.Between(0, 200),
+    ease: 'elastic',
+    x: () => x + Phaser.Math.Between(-25, 25),
+    y: () => y + Phaser.Math.Between(-25, 25),
+    onComplete: () => 
+      self.tweens.add({
+        targets: cards.map(c => c.image),
+        duration: 200,
+        delay: 0,
+        ease: 'sine',
+        x: x,
+        y: y,
+        onComplete: () => cards.forEach(c => c.setLocation(x, y))
+      })
     });
   });
 
@@ -250,7 +258,7 @@ function create() {
         }
       }
     }
-    console.log(flatHands);
+
     flatHands.forEach( (newCard, i) => {
       let card = self.cards[newCard.id]
 
