@@ -37,7 +37,10 @@ var config = {
     preload: preload,
     create: create,
     update: update
-  } 
+  },
+  dom: {
+    createContainer: true
+  }
 };
   
 let game = new Phaser.Game(config);
@@ -200,12 +203,22 @@ function create() {
   // ************** Deal Size *****************************************************************************
   // *************************************************************************************************
 
-  this.dealSize = new Text(this,
-    self.scale.width - TEXT_SIZE,
-    CIRCLE_SIZE - (TEXT_SIZE / 2),
-    `${dealSize}`,
-    () => {});
+  let dropdown = `<select name="dealsize" id="deal-size" style="font-size: ${TEXT_SIZE}px">\n`;
+  for (let i = 0; i < 7; i++) {
+    dropdown += `<option value="${i+1}">${i+1}</option>\n`;
+  }
+  dropdown += `<option value="9" selected>9</option>\n`;
+  for (let i = 10; i < 52; i++) {
+    dropdown += `<option value="${i+1}">${i+1}</option>\n`;
+  }
+  dropdown += `</select>\n`;
 
+  this.dropdown = this.add.dom(self.scale.width - (TEXT_SIZE * 2), CIRCLE_SIZE).createFromHTML(dropdown);
+
+  this.dropdown.addListener('change');
+  this.dropdown.on('change', function (event) {
+    dealSize = parseInt(event.target.value);
+  });
 
 
 // *************************************************************************************************
@@ -213,7 +226,7 @@ function create() {
 // *************************************************************************************************
 
   this.dealText = new Text(this,
-    self.scale.width - (TEXT_SIZE * 4),
+    self.scale.width - (TEXT_SIZE * 6),
     CIRCLE_SIZE - (TEXT_SIZE / 2),
       `DEAL`,
       function () {
