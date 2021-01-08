@@ -16,7 +16,7 @@ const TEXT_SIZE = CIRCLE_SIZE;
 
 const DOUBLE_CLICK_DELAY = 350;
 
-const DEAL_SIZE = 9;
+let dealSize = 9;
 
 // *****************************************************************************
 // ************** CONFIG *******************************************************
@@ -155,46 +155,33 @@ function create() {
 // ************** SHUFFLE *****************************************************************************
 // *************************************************************************************************
 
-  this.shuffleText = this.add.text(
+  this.shuffleText = new Text(this,
     (CIRCLE_SIZE + BUFFER) * 2,
     CIRCLE_SIZE - (TEXT_SIZE / 2),
-      ['SHUFFLE']
-    )
-    .setFontSize(TEXT_SIZE)
-    .setFontFamily('Trebuchet MS')
-    .setColor('#00ffff')
-    .setInteractive({useHandCursor: true});
-  
-  this.shuffleText.on('pointerover', function () {
-    self.shuffleText.setColor('#ff69b4');
-  });
-  
-  this.shuffleText.on('pointerout', function () {
-    self.shuffleText.setColor('#00ffff');
-  });
-  
-  this.shuffleText.on('pointerup', function () {
-    self.socket.emit("shuffleClicked");
-  });
+    'SHUFFLE',
+    function () {
+      self.socket.emit("shuffleClicked");
+    }
+  );
 
   this.socket.on('collectCards', function (normalizedX, normalizedY) {
-  const x = denormalizeX(self, normalizedX);
-  const y = denormalizeY(self, normalizedY);
+    const x = denormalizeX(self, normalizedX);
+    const y = denormalizeY(self, normalizedY);
 
-  const cards = Object.values(self.cards)
-  cards.forEach( card => {
-    card.showBack();
-    card.setOwner(null);
-  });
+    const cards = Object.values(self.cards)
+    cards.forEach( card => {
+      card.showBack();
+      card.setOwner(null);
+    });
 
-  self.tweens.add({
-    targets: cards.map(c => c.image),
-    duration: 200,
-    delay: () => Phaser.Math.Between(0, 200),
-    ease: 'sine',
-    x: () => x + Phaser.Math.Between(-25, 25),
-    y: () => y + Phaser.Math.Between(-25, 25),
-    onComplete: () => {
+    self.tweens.add({
+      targets: cards.map(c => c.image),
+      duration: 200,
+      delay: () => Phaser.Math.Between(0, 200),
+      ease: 'sine',
+      x: () => x + Phaser.Math.Between(-25, 25),
+      y: () => y + Phaser.Math.Between(-25, 25),
+      onComplete: () => {
         cards[Phaser.Math.Between(0, cards.length - 1)].bringToTop();
         self.tweens.add({
           targets: cards.map(c => c.image),
@@ -209,44 +196,42 @@ function create() {
     });
   });
 
+  // *************************************************************************************************
+  // ************** Deal Size *****************************************************************************
+  // *************************************************************************************************
+
+  this.dealSize = new Text(this,
+    self.scale.width - TEXT_SIZE,
+    CIRCLE_SIZE - (TEXT_SIZE / 2),
+    `${dealSize}`,
+    () => {});
+
+
+
 // *************************************************************************************************
 // ************** DEAL *****************************************************************************
 // *************************************************************************************************
 
-  this.dealText = this.add.text(
+  this.dealText = new Text(this,
     self.scale.width - (TEXT_SIZE * 4),
     CIRCLE_SIZE - (TEXT_SIZE / 2),
-      [`DEAL ${DEAL_SIZE}`]
-    )
-    .setFontSize(TEXT_SIZE)
-    .setFontFamily('Trebuchet MS')
-    .setColor('#00ffff')
-    .setInteractive({useHandCursor: true});
-
-  
-  this.dealText.on('pointerover', function () {
-    self.dealText.setColor('#ff69b4');
-  });
-  
-  this.dealText.on('pointerout', function () {
-    self.dealText.setColor('#00ffff');
-  });
-  
-  this.dealText.on('pointerup', function () {
-    self.socket.emit("dealClicked", DEAL_SIZE);
-  });
+      `DEAL`,
+      function () {
+        self.socket.emit("dealClicked", dealSize);
+      }
+    );
 
   this.socket.on('deal', function (playerHands, dealerId) {
     // Add dealer-indicating rectangle under the deck
     self.rectangle.clear();
     self.rectangle.fillStyle(getPlayerColour(self, dealerId));
     let topLeft = [];
-    self.dealText.getTopLeft(topLeft);
+    self.dealText.text.getTopLeft(topLeft);
     self.rectangle.fillRect(
       topLeft.x,
       topLeft.y,
-      self.dealText.width,
-      self.dealText.height);
+      self.dealText.text.width,
+      self.dealText.text.height);
   
     // Now distribute the cards
     let hands = Object.values(playerHands);
@@ -293,98 +278,98 @@ function create() {
     .setFontFamily('Trebuchet MS')
     .setColor('#000000');
 
-    this.cardSize_1 = this.add.text(
-      (self.scale.width / 2) + (TEXT_SIZE),
-      CIRCLE_SIZE - (TEXT_SIZE / 2),
-        ['1']
-      )
-      .setFontSize(TEXT_SIZE)
-      .setFontFamily('Trebuchet MS')
-      .setColor('#00ffff')
-      .setInteractive({useHandCursor: true});
-  
-    
-    this.cardSize_1.on('pointerover', function () {
-      if (self.selectedCardSize !== 1) {
-        self.cardSize_1.setColor('#ff69b4');
-      }
-    });
-    
-    this.cardSize_1.on('pointerout', function () {
-      if (self.selectedCardSize !== 1) {
-        self.cardSize_1.setColor('#00ffff');
-      }
-    });
-    
-    this.cardSize_1.on('pointerdown', function () {
-      self.selectedCardSize = 1;
-      updateCardScale(self.originalCardScale / 2, self.cards);
-      self.cardSize_1.setColor('#000000');
-      self.cardSize_2.setColor('#00ffff');
-      self.cardSize_3.setColor('#00ffff');
-    });
+  this.cardSize_1 = this.add.text(
+    (self.scale.width / 2) + (TEXT_SIZE),
+    CIRCLE_SIZE - (TEXT_SIZE / 2),
+      ['1']
+    )
+    .setFontSize(TEXT_SIZE)
+    .setFontFamily('Trebuchet MS')
+    .setColor('#00ffff')
+    .setInteractive({useHandCursor: true});
 
-    this.cardSize_2 = this.add.text(
-      (self.scale.width / 2 ) + ((TEXT_SIZE) * 2),
-      CIRCLE_SIZE - (TEXT_SIZE / 2),
-        ['2']
-      )
-      .setFontSize(TEXT_SIZE)
-      .setFontFamily('Trebuchet MS')
-      .setColor('#000000')
-      .setInteractive({useHandCursor: true});
   
-    
-    this.cardSize_2.on('pointerover', function () {
-      if (self.selectedCardSize !== 2) {
-        self.cardSize_2.setColor('#ff69b4');
-      }
-    });
-    
-    this.cardSize_2.on('pointerout', function () {
-      if (self.selectedCardSize !== 2) {
-        self.cardSize_2.setColor('#00ffff');
-      }
-    });
-    
-    this.cardSize_2.on('pointerdown', function () {
-      self.selectedCardSize = 2;
-      updateCardScale(self.originalCardScale, self.cards);
+  this.cardSize_1.on('pointerover', function () {
+    if (self.selectedCardSize !== 1) {
+      self.cardSize_1.setColor('#ff69b4');
+    }
+  });
+  
+  this.cardSize_1.on('pointerout', function () {
+    if (self.selectedCardSize !== 1) {
       self.cardSize_1.setColor('#00ffff');
-      self.cardSize_2.setColor('#000000');
-      self.cardSize_3.setColor('#00ffff');
-    });
+    }
+  });
+  
+  this.cardSize_1.on('pointerdown', function () {
+    self.selectedCardSize = 1;
+    updateCardScale(self.originalCardScale / 2, self.cards);
+    self.cardSize_1.setColor('#000000');
+    self.cardSize_2.setColor('#00ffff');
+    self.cardSize_3.setColor('#00ffff');
+  });
 
-    this.cardSize_3 = this.add.text(
-      (self.scale.width / 2 ) + ((TEXT_SIZE) * 3),
-      CIRCLE_SIZE - (TEXT_SIZE / 2),
-        ['3']
-      )
-      .setFontSize(TEXT_SIZE)
-      .setFontFamily('Trebuchet MS')
-      .setColor('#00ffff')
-      .setInteractive({useHandCursor: true});
+  this.cardSize_2 = this.add.text(
+    (self.scale.width / 2 ) + ((TEXT_SIZE) * 2),
+    CIRCLE_SIZE - (TEXT_SIZE / 2),
+      ['2']
+    )
+    .setFontSize(TEXT_SIZE)
+    .setFontFamily('Trebuchet MS')
+    .setColor('#000000')
+    .setInteractive({useHandCursor: true});
+
   
-    
-    this.cardSize_3.on('pointerover', function () {
-      if (self.selectedCardSize !== 3) {
-        self.cardSize_3.setColor('#ff69b4');
-      }
-    });
-    
-    this.cardSize_3.on('pointerout', function () {
-      if (self.selectedCardSize !== 3) {
-        self.cardSize_3.setColor('#00ffff');
-      }
-    });
-    
-    this.cardSize_3.on('pointerdown', function () {
-      self.selectedCardSize = 3;
-      updateCardScale(self.originalCardScale * 2, self.cards);
-      self.cardSize_1.setColor('#00ffff');
+  this.cardSize_2.on('pointerover', function () {
+    if (self.selectedCardSize !== 2) {
+      self.cardSize_2.setColor('#ff69b4');
+    }
+  });
+  
+  this.cardSize_2.on('pointerout', function () {
+    if (self.selectedCardSize !== 2) {
       self.cardSize_2.setColor('#00ffff');
-      self.cardSize_3.setColor('#000000');
-    });
+    }
+  });
+  
+  this.cardSize_2.on('pointerdown', function () {
+    self.selectedCardSize = 2;
+    updateCardScale(self.originalCardScale, self.cards);
+    self.cardSize_1.setColor('#00ffff');
+    self.cardSize_2.setColor('#000000');
+    self.cardSize_3.setColor('#00ffff');
+  });
+
+  this.cardSize_3 = this.add.text(
+    (self.scale.width / 2 ) + ((TEXT_SIZE) * 3),
+    CIRCLE_SIZE - (TEXT_SIZE / 2),
+      ['3']
+    )
+    .setFontSize(TEXT_SIZE)
+    .setFontFamily('Trebuchet MS')
+    .setColor('#00ffff')
+    .setInteractive({useHandCursor: true});
+
+  
+  this.cardSize_3.on('pointerover', function () {
+    if (self.selectedCardSize !== 3) {
+      self.cardSize_3.setColor('#ff69b4');
+    }
+  });
+  
+  this.cardSize_3.on('pointerout', function () {
+    if (self.selectedCardSize !== 3) {
+      self.cardSize_3.setColor('#00ffff');
+    }
+  });
+  
+  this.cardSize_3.on('pointerdown', function () {
+    self.selectedCardSize = 3;
+    updateCardScale(self.originalCardScale * 2, self.cards);
+    self.cardSize_1.setColor('#00ffff');
+    self.cardSize_2.setColor('#00ffff');
+    self.cardSize_3.setColor('#000000');
+  });
 } // END OF CREATE
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -540,5 +525,32 @@ function getPlayerColour (scene, playerId) {
     return scene.players[playerId].colour;
   } else {
     return 0x000000; // black
+  }
+}
+
+// *************************************************************************************************
+// ************** Text *****************************************************************************
+// *************************************************************************************************
+
+class Text {
+  constructor (scene, x, y, text, onClick) {
+    let self = this;
+    
+    this.text = scene.add.text(x, y, [text])
+      .setFontSize(TEXT_SIZE)
+      .setFontFamily('Trebuchet MS')
+      .setColor('#00ffff')
+      .setInteractive({useHandCursor: true});
+
+    this.text.on('pointerover', function () {
+      self.text.setColor('#ff69b4');
+    });
+    
+    this.text.on('pointerout', function () {
+      self.text.setColor('#00ffff');
+    });
+    
+    this.text.on('pointerup', onClick);    
+
   }
 }
