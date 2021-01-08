@@ -2,8 +2,8 @@
 // ************** CONSTANTS ****************************************************
 // *****************************************************************************
 
-let CARD_SCALE = 0.75;
-const DYNAMIC_SCALING = true; // when true, CARD_SCALE is set based
+let cardScale = 0.75;
+const DYNAMIC_SCALING = true; // when true, cardScale is set based
                               // on the screen dimensions
 const DECK_STYLE = 'blue2';
  
@@ -65,14 +65,14 @@ function setCardScale(screenWidth, screenHeight) {
     let minHigh = 8;
     let wscale = (screenWidth / minAcross) / 140;
     let hscale = (screenHeight / minHigh) / 190;
-    CARD_SCALE = Math.min(wscale, hscale);
+    cardScale = Math.min(wscale, hscale);
   }
-  console.log(`Card Scale: ${CARD_SCALE}`);
+  console.log(`Card Scale: ${cardScale}`);
 }
 
 function create() {
   setCardScale(this.scale.width, this.scale.height);
-  this.originalCardScale = CARD_SCALE;
+  this.originalCardScale = cardScale;
   this.selectedCardSize = 2; // default size is 2 of (1,2,3)
 
   let self = this;  
@@ -393,7 +393,7 @@ function create() {
 // *************************************************************************************************
 
 function updateCardScale(newScale, cards) {
-  CARD_SCALE = newScale;
+  cardScale = newScale;
   for (let card of Object.values(cards)) {
     card.setCardScale(newScale);
   }
@@ -445,7 +445,7 @@ class Card {
     this.eyes = scene.add.image(x, y, 'eyes')
     this.eyes.visible = false;
 
-    this.setCardScale(CARD_SCALE);
+    this.setCardScale(cardScale);
 
     this.setOwner(ownerId);
 
