@@ -204,11 +204,11 @@ function create() {
   // *************************************************************************************************
 
   let dropdown = `<select name="dealsize" id="deal-size" style="font-size: ${TEXT_SIZE}px">\n`;
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 8; i++) {
     dropdown += `<option value="${i+1}">${i+1}</option>\n`;
   }
   dropdown += `<option value="9" selected>9</option>\n`;
-  for (let i = 10; i < 52; i++) {
+  for (let i = 9; i < 52; i++) {
     dropdown += `<option value="${i+1}">${i+1}</option>\n`;
   }
   dropdown += `</select>\n`;
