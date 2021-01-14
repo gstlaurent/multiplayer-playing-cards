@@ -183,7 +183,10 @@ let players = {};
 
 
 io.on('connection', function (socket) {
-  console.log(`Connected: ${socket.id}. There are ${Object.entries(players).length + 1} players.`);
+  let address = socket.request.connection.remoteAddress.split(':')[3];
+  let port = socket.request.connection.remotePort;
+
+  console.log(`Connected: ${socket.id}, IP: ${address}:${port}. There are ${Object.entries(players).length + 1} players.`);
 
 
   players[socket.id] = createPlayer(
