@@ -118,6 +118,8 @@ class Player {
     this.id = id;
     this.colour = colour;
     this.handOrigin = handOrigin;
+    this.x = handOrigin[0];
+    this.y = handOrigin[1];
   }
 }
 
@@ -204,6 +206,15 @@ io.on('connection', function (socket) {
     // Card rendering depends on player colour, so players must be initialized
     // prior to sending cards.
     socket.emit('initializeCards', cards.map(card => card.toClient(socket.id)));
+  });
+
+  socket.on('pointermove', function (x, y) {
+    let player = players[socket.id];
+    if (player) {
+      player.x = x;
+      player.y = y;
+      socket.broadcast.emit('pointermove', socket.id, x, y);
+    }
   });
 
   socket.on('cardDragged', function (cardUpdate) {

@@ -15,6 +15,8 @@ const TEXT_SIZE = CIRCLE_SIZE;
 
 const DOUBLE_CLICK_DELAY = 350;
 
+const POINTER_SCALE = 0.5;
+
 let dealSize = 9;
 
 // *****************************************************************************
@@ -51,12 +53,10 @@ let game = new Phaser.Game(config);
 function preload() {
   this.load.atlasXML(PLAYING_CARDS_TEXTURE, 'assets/playingCards.png', 'assets/playingCards.xml');
   this.load.image('eyes', 'assets/eyes.png');
+  this.load.image('pointer', 'assets/handofcards.png');
 }
 
 
-// *****************************************************************************
-// ************** CREATE *******************************************************
-// *****************************************************************************
 
 function setCardScale(screenWidth, screenHeight) {
   if (DYNAMIC_SCALING) {
@@ -70,6 +70,10 @@ function setCardScale(screenWidth, screenHeight) {
   }
   console.log(`Card Scale: ${cardScale}`);
 }
+
+// *****************************************************************************
+// ************** CREATE *******************************************************
+// *****************************************************************************
 
 function create() {
   setCardScale(this.scale.width, this.scale.height);
@@ -91,13 +95,23 @@ function create() {
   }); 
   this.socket.on('currentPlayers', function (players) {
     self.players = players;
+    for (p of Object.values(players)) {
+      initializePlayer(self, p);
+    }
+    self.player = self.players[self.id];
     self.circle.clear();
     self.circle.fillStyle(getPlayerColour(self, self.id));
     self.circle.fillCircle(CIRCLE_SIZE, CIRCLE_SIZE, CIRCLE_SIZE - BUFFER);
     self.socket.emit('playersInitialized');
   });
-  this.socket.on('newPlayer', (player) => this.players[player.id] = player);
-  this.socket.on('playerExit', (player) => delete this.players[player.id]);
+  this.socket.on('newPlayer', (player) => this.players[player.id] = initializePlayer(self, player));
+  this.socket.on('playerExit', (playerId) => {
+    let player = self.players[playerId];
+    if (player) {
+      player.pointer.destroy();
+      delete self.players[playerId]
+    }
+  });
 
   this.socket.on('initializeCards', function (cards) {
     cards.forEach( card => {
@@ -149,6 +163,15 @@ function create() {
       if (card === null) return;
 
       self.socket.emit('cardDoubleClicked', card.id)
+    }
+  });
+
+  self.socket.on('pointermove', function (playerId, x, y) {
+    let player = self.players[playerId]
+    if (player) {
+      player.pointer.x = denormalizeX(self, x);
+      player.pointer.y = denormalizeY(self, y);
+      self.children.bringToTop(player.pointer );
     }
   });
 
@@ -528,8 +551,6 @@ class Card {
 }
 
 
-function update() {
-}
 
 function getPlayerColour (scene, playerId) {
   if (scene.players[playerId]) {
@@ -563,5 +584,31 @@ class Text {
     
     this.text.on('pointerup', onClick);    
 
+  }
+}
+
+function initializePlayer(scene, player) {
+  if (player.id != scene.id) {
+    let x = denormalizeX(scene, player.x);
+    let y = denormalizeY(scene, player.y);
+    player.pointer = scene.add.image(x, y, 'pointer').setScale(POINTER_SCALE);
+    player.pointer.setTintFill(player.colour);
+  }
+  return player;
+}
+
+
+function update() {
+  let self = this;
+  const pointer = this.input.activePointer;
+  if (pointer && this.player && this.socket) {
+    if (this.player.x !== pointer.x || this.player.y !== pointer.y) {
+      if (!(pointer.x === 0 && pointer.y === 0)) {
+        // On initialization, the pointer is set to 0,0
+        this.player.x = pointer.x;
+        this.player.y = pointer.y;
+        self.socket.emit("pointermove", normalizeX(self, pointer.x), normalizeY(self, pointer.y));
+      }
+    }
   }
 }
