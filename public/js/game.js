@@ -5,10 +5,9 @@
 let cardScale = 0.75;
 const DYNAMIC_SCALING = true; // when true, cardScale is set based
                               // on the screen dimensions
-const DECK_STYLE = 'blue2';
+const DECK_STYLE = 'purple_back';
  
 const PLAYING_CARDS_TEXTURE = 'playingCards';
-const CARD_BACK_TEXTURE = 'playingCardBacks';
 
 const CIRCLE_SIZE = 32;
 const BUFFER =  5;
@@ -51,7 +50,6 @@ let game = new Phaser.Game(config);
 
 function preload() {
   this.load.atlasXML(PLAYING_CARDS_TEXTURE, 'assets/playingCards.png', 'assets/playingCards.xml');
-  this.load.atlasXML(CARD_BACK_TEXTURE, 'assets/playingCardBacks.png', 'assets/playingCardBacks.xml');
   this.load.image('eyes', 'assets/eyes.png');
 }
 
@@ -434,7 +432,7 @@ class Card {
     let x = denormalizeX(scene, normalizedX);
     let y = denormalizeY(scene, normalizedY);    
     this.image = faceName === null
-       ? scene.add.image(x, y, CARD_BACK_TEXTURE, DECK_STYLE)
+       ? scene.add.image(x, y, PLAYING_CARDS_TEXTURE, DECK_STYLE)
        : scene.add.image(x, y, PLAYING_CARDS_TEXTURE, faceName);
     this.image.setInteractive();
     this.image.setData('cardId', cardId);
@@ -469,7 +467,7 @@ class Card {
   }
 
   showBack() {
-    this.image.setTexture(CARD_BACK_TEXTURE, DECK_STYLE);
+    this.image.setTexture(PLAYING_CARDS_TEXTURE, DECK_STYLE);
     this.image.clearTint();
   }
 
