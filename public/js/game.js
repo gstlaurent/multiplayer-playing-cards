@@ -15,9 +15,13 @@ const TEXT_SIZE = CIRCLE_SIZE;
 
 const DOUBLE_CLICK_DELAY = 350;
 
-const POINTER_SCALE = 0.5;
+const POINTER_SCALE = 0.3;
 
 let dealSize = 9;
+
+const CARD_WIDTH = 173;
+const CARD_HEIGHT = 264;
+const CARD_RATIO = 14.0/19.0;
 
 // *****************************************************************************
 // ************** CONFIG *******************************************************
@@ -60,12 +64,11 @@ function preload() {
 
 function setCardScale(screenWidth, screenHeight) {
   if (DYNAMIC_SCALING) {
-    // Card Dimensions are 140 x 190
     // Let's make sure the cards are small enough to fit this many cards:
     let minAcross = 14
     let minHigh = 8;
-    let wscale = (screenWidth / minAcross) / 140;
-    let hscale = (screenHeight / minHigh) / 190;
+    let wscale = (screenWidth / minAcross) / CARD_WIDTH; 
+    let hscale = (screenHeight / minHigh) / CARD_HEIGHT;
     cardScale = Math.min(wscale, hscale);
   }
   console.log(`Card Scale: ${cardScale}`);
@@ -472,7 +475,7 @@ class Card {
 
 
   setCardScale(newScale) {
-    this.image.setScale(newScale);
+    this.image.setScale(newScale * (CARD_RATIO / (CARD_WIDTH / CARD_HEIGHT)), newScale);
     
     // Create eyes that are half the width of the card and along its top
     let eyesScale = (this.image.displayWidth / 2) / this.eyes.width;
