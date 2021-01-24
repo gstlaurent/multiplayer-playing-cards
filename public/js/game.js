@@ -2,7 +2,7 @@
 // ************** CONSTANTS ****************************************************
 // *****************************************************************************
 
-let cardScale = 0.67;
+let cardScale = 0.6;
 const DYNAMIC_SCALING = false; // when true, cardScale is set based
                               // on the screen dimensions
 const DECK_STYLE = 'purple_back';
