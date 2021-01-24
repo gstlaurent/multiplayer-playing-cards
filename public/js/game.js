@@ -2,8 +2,8 @@
 // ************** CONSTANTS ****************************************************
 // *****************************************************************************
 
-let cardScale = 0.75;
-const DYNAMIC_SCALING = true; // when true, cardScale is set based
+let cardScale = 0.67;
+const DYNAMIC_SCALING = false; // when true, cardScale is set based
                               // on the screen dimensions
 const DECK_STYLE = 'purple_back';
  
@@ -21,7 +21,7 @@ let dealSize = 9;
 
 const CARD_WIDTH = 173;
 const CARD_HEIGHT = 264;
-const CARD_RATIO = 14.0/19.0;
+// const CARD_RATIO = 14.0/19.0;
 
 // *****************************************************************************
 // ************** CONFIG *******************************************************
@@ -31,10 +31,10 @@ const CARD_RATIO = 14.0/19.0;
 var config = {
   type: Phaser.AUTO,
   parent: 'phaser-example',
-  width: 1400,
-  height: 800,
+  width: 1920,
+  height: 1080,
   scale : {
-   mode: Phaser.Scale.RESIZE,
+   mode: Phaser.Scale.FIT,
    autoCenter: Phaser.Scale.CENTER_BOTH
   },
   backgroundColor: 'rgba(0, 190, 0, 0)',
@@ -407,6 +407,12 @@ function create() {
     self.cardSize_2.setColor('#00ffff');
     self.cardSize_3.setColor('#000000');
   });
+
+
+  self.fullscreen = new Text(this, 0, self.scale.height - (TEXT_SIZE * 1.5),
+      "Fullscreen", function () {
+    self.scale.toggleFullscreen();
+  });
 } // END OF CREATE
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -416,7 +422,7 @@ function create() {
 
 function updateCardScale(newScale, cards) {
   cardScale = newScale;
-  for (let card of Object.values(cards)) {
+  for (let card of Object.values(cards)) { 
     card.setCardScale(newScale);
   }
 }
@@ -475,7 +481,8 @@ class Card {
 
 
   setCardScale(newScale) {
-    this.image.setScale(newScale * (CARD_RATIO / (CARD_WIDTH / CARD_HEIGHT)), newScale);
+//    this.image.setScale(newScale * (CARD_RATIO / (CARD_WIDTH / CARD_HEIGHT)), newScale);
+    this.image.setScale(newScale);
     
     // Create eyes that are half the width of the card and along its top
     let eyesScale = (this.image.displayWidth / 2) / this.eyes.width;
