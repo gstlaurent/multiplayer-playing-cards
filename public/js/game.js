@@ -91,7 +91,12 @@ function create() {
   this.circle = self.add.graphics();  // displays current player's colour
   this.rectangle = self.add.graphics(); // displays colour of last dealer
   
-  
+  // No cursor needed because it draws the cursor for you.
+  // this may not be ideal due to lag, but it is easier than having a
+  // dynamically-generated cursor (assuming you want infinite colours, which,
+  // I guess, we don't)
+  this.input.setDefaultCursor('none');
+
   this.socket.on('connect', function () {
     console.log(`Connected with id ${self.socket.id}`);
     self.id = self.socket.id;
@@ -174,7 +179,7 @@ function create() {
     if (player) {
       player.pointer.x = denormalizeX(self, x);
       player.pointer.y = denormalizeY(self, y);
-      self.children.bringToTop(player.pointer );
+      self.children.bringToTop(player.pointer);
     }
   });
 
@@ -598,12 +603,10 @@ class Text {
 }
 
 function initializePlayer(scene, player) {
-  if (player.id != scene.id) {
-    let x = denormalizeX(scene, player.x);
-    let y = denormalizeY(scene, player.y);
-    player.pointer = scene.add.image(x, y, 'pointer').setScale(POINTER_SCALE);
-    player.pointer.setTintFill(player.colour);
-  }
+  let x = denormalizeX(scene, player.x);
+  let y = denormalizeY(scene, player.y);
+  player.pointer = scene.add.image(x, y, 'pointer').setScale(POINTER_SCALE);
+  player.pointer.setTintFill(player.colour);
   return player;
 }
 
@@ -617,6 +620,9 @@ function update() {
         // On initialization, the pointer is set to 0,0
         this.player.x = pointer.x;
         this.player.y = pointer.y;
+        this.player.pointer.x = pointer.x;
+        this.player.pointer.y = pointer.y;
+        self.children.bringToTop(this.player.pointer);        
         self.socket.emit("pointermove", normalizeX(self, pointer.x), normalizeY(self, pointer.y));
       }
     }

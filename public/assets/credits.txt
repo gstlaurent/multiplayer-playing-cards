@@ -10,3 +10,6 @@ https://www.pngkit.com/view/u2q8a9y3i1q8e6r5_mouse-pointer-icon-symbol-vector-bl
 Hand of Cards:
 https://thenounproject.com/term/hand-of-cards/219515/
 https://static.thenounproject.com/png/219515-200.png
+
+Hand of Cards svg:
+<a href="http://www.onlinewebfonts.com">oNline Web Fonts</a>
