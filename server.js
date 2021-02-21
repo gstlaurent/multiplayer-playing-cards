@@ -184,7 +184,7 @@ let cards = createDeck(); // [Card]
 let players = {};
 
 function getIPAddress(socket) {
-  const address = forwarded(socket);
+  const address = forwarded(socket.conn, socket.handshake.headers);
   return [address.ip, address.port];
 }
 
