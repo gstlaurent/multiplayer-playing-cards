@@ -6,6 +6,8 @@ const app = express();
 const server = require('http').Server(app);
 const io = require('socket.io')(server);
 
+const  forwarded = require('forwarded-for');
+
 const PORT = process.env.PORT || 8081;
 
 app.use(express.static(__dirname + '/public'));
@@ -182,15 +184,8 @@ let cards = createDeck(); // [Card]
 let players = {};
 
 function getIPAddress(socket) {
-  const xforward =  socket.handshake.headers['x-forwarded-for'];
-  let ip;
-  if (xforward) {
-    ip = xforward[-1];
-  } else {
-    ip = socket.handshake.address.address;
-  }
-  const port = socket.request.connection.remotePort;
-  return [ip, port];
+  const address = forwarded(socket);
+  return [address.ip, address.port];
 }
 
 
