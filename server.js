@@ -181,12 +181,21 @@ function createPlayer(id, unavailableColours, unavailableHandOrigins) {
 let cards = createDeck(); // [Card]
 let players = {};
 
+function getIPAddress(socket) {
+  const xforward =  socket.handshake.headers['x-forwarded-for'];
+  let ip;
+  if (xforward) {
+    ip = xforward[-1];
+  } else {
+    ip = socket.handshake.address.address;
+  }
+  const port = socket.request.connection.remotePort;
+  return [ip, port];
+}
 
 
 io.on('connection', function (socket) {
-  let address = socket.request.connection.remoteAddress.split(':')[3];
-  let port = socket.request.connection.remotePort;
-
+  const [address, port] = getIPAddress(socket);
   console.log(`Connected: ${socket.id}, IP: ${address}:${port}. There are ${Object.entries(players).length + 1} players.`);
 
 
@@ -226,7 +235,8 @@ io.on('connection', function (socket) {
 
   // when a player disconnects, remove them from our players object
   socket.on('disconnect', function () {
-    console.log(`Disconnected: ${socket.id}. There are ${Object.entries(players).length - 1} players.`);
+    const [address, port] = getIPAddress(socket);
+    console.log(`Disconnected: ${socket.id}, IP: ${address}:${port}. There are ${Object.entries(players).length - 1} players.`);
 
     // remove this player from our players object
     delete players[socket.id];

@@ -84,7 +84,10 @@ function create() {
   this.selectedCardSize = 2; // default size is 2 of (1,2,3)
 
   let self = this;  
-  this.socket = io();
+
+  // Attempt to stop disconnects
+  this.socket = io({transports: ['websocket'], upgrade: false});
+  
   this.id = null;
   this.cards = {};
   this.players = {};
@@ -607,6 +610,7 @@ function initializePlayer(scene, player) {
   let y = denormalizeY(scene, player.y);
   player.pointer = scene.add.image(x, y, 'pointer').setScale(POINTER_SCALE);
   player.pointer.setTintFill(player.colour);
+  
   return player;
 }
 
